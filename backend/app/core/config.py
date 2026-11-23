@@ -28,6 +28,17 @@ class Settings(BaseSettings):
 
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
+    # --- Đặt hàng & giao hàng ---
+    shop_timezone: str = "Asia/Ho_Chi_Minh"
+    # Phải đặt trước giờ bắt đầu khung giao ít nhất bấy nhiêu phút (để kịp bó hoa)
+    order_lead_time_minutes: int = Field(default=120, ge=0)
+    # Đặt trước tối đa bao nhiêu ngày
+    booking_window_days: int = Field(default=7, ge=1, le=60)
+    # Thời gian giữ hoa + khung giờ chờ khách thanh toán
+    hold_minutes: int = Field(default=15, ge=1, le=120)
+    # Phí ship cố định tạm thời — ngày 5 thay bằng phí theo khoảng cách (Goong)
+    flat_delivery_fee: int = Field(default=30_000, ge=0)
+
     # --- Kho & định giá (ngày 8 sẽ chuyển sang bảng shop_settings để chủ shop sửa trên web) ---
     # Lô hết hạn trong số ngày này được tính là "sắp hết hạn"
     expiring_soon_days: int = Field(default=2, ge=1, le=14)

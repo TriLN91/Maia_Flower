@@ -103,8 +103,9 @@ class InventoryMovement(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     batch_id: Mapped[int] = mapped_column(ForeignKey("batches.id", ondelete="RESTRICT"), index=True)
-    # Khóa ngoại tới orders sẽ được thêm ở migration ngày 4
-    order_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
+    order_id: Mapped[int | None] = mapped_column(
+        ForeignKey("orders.id", ondelete="RESTRICT"), index=True
+    )
     type: Mapped[MovementType] = mapped_column(_str_enum(MovementType, "movement_type"))
     quantity: Mapped[int] = mapped_column(Integer)
     reason: Mapped[str | None] = mapped_column(String(500))

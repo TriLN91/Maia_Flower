@@ -7,7 +7,9 @@ from app.models.catalog import (
     TemplateItem,
     TemplatePriceHistory,
 )
+from app.models.delivery import DeliverySlot, DeliverySlotDay
 from app.models.inventory import Batch, BatchStatus, InventoryMovement, MovementType
+from app.models.orders import Order, OrderAllocation, OrderItem, OrderStatus
 from app.models.staff_user import StaffRole, StaffUser
 
 __all__ = [
@@ -15,9 +17,15 @@ __all__ = [
     "Batch",
     "BatchStatus",
     "BouquetTemplate",
+    "DeliverySlot",
+    "DeliverySlotDay",
     "FlowerType",
     "InventoryMovement",
     "MovementType",
+    "Order",
+    "OrderAllocation",
+    "OrderItem",
+    "OrderStatus",
     "StaffRole",
     "StaffUser",
     "Supplier",

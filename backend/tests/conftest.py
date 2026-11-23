@@ -36,13 +36,19 @@ def migrated_database() -> None:
     command.upgrade(cfg, "head")
 
 
-@pytest.fixture(autouse=True)
-async def clean_tables(migrated_database: None) -> AsyncIterator[None]:
-    yield
+async def _truncate_all() -> None:
     tables = ", ".join(t.name for t in reversed(Base.metadata.sorted_tables))
     async with SessionLocal() as session:
         await session.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
         await session.commit()
+
+
+@pytest.fixture(autouse=True)
+async def clean_tables(migrated_database: None) -> AsyncIterator[None]:
+    # Dọn TRƯỚC mỗi test: migration có dữ liệu mặc định (vd. khung giờ) — test tự tạo dữ liệu
+    # mình cần, không phụ thuộc dữ liệu seed.
+    await _truncate_all()
+    yield
 
 
 @pytest.fixture

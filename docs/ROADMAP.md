@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     3/14 ngày (~21%)
+       ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     4/14 ngày (~29%)
 ```
 
 ---
@@ -136,7 +136,7 @@ inventory_movements(id, batch_id, order_id NULL, type[IMPORT|RESERVE|RELEASE|WAS
 
 ---
 
-### 🛒 Ngày 4 — Checkout: FEFO + giữ hoa + giữ khung giờ (tính năng A, phần 2) ⭐ ngày quan trọng nhất
+### 🛒 Ngày 4 — Checkout: FEFO + giữ hoa + giữ khung giờ (tính năng A, phần 2) ⭐ ✅
 
 **Bảng mới**
 ```
@@ -179,6 +179,13 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 - Khung giờ đầy → từ chối.
 
 **Xong khi**: đặt được đơn 3 bó qua Swagger, xem được lô nào bị trừ.
+
+> **Ghi chú khi làm:**
+> - Lô phải còn hạn tới **hết** khung giao (không chỉ lúc bắt đầu) — thận trọng hơn thiết kế ban đầu.
+> - Lưu thêm `request_fingerprint`: cùng Idempotency-Key nhưng khác nội dung → 422 `IDEMPOTENCY_KEY_REUSED`.
+> - Đơn lưu snapshot tên mẫu + giờ giao thực (`delivery_starts_at/ends_at`); mã đơn bỏ ký tự dễ nhầm (0/O, 1/I).
+> - Migration tạo sẵn 5 khung giờ mặc định; khung theo ngày được tạo lười bằng `INSERT … ON CONFLICT DO NOTHING`.
+> - Thêm sớm `GET /admin/orders/{id}` (xem phân bổ lô) — phần còn lại của quản lý đơn vẫn ở ngày 6.
 
 ---
 
