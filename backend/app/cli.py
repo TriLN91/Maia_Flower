@@ -13,9 +13,10 @@ import sys
 from pydantic import ValidationError
 
 from app.core.db import SessionLocal, engine
+from app.core.errors import AppError
 from app.models.staff_user import StaffRole
 from app.schemas.staff import StaffCreate
-from app.services.staff import StaffError, create_staff
+from app.services.staff import create_staff
 
 
 async def _create_owner(email: str, name: str, password: str) -> None:
@@ -26,7 +27,7 @@ async def _create_owner(email: str, name: str, password: str) -> None:
     async with SessionLocal() as session:
         try:
             user = await create_staff(session, data)
-        except StaffError as e:
+        except AppError as e:
             sys.exit(e.message)
     await engine.dispose()
     print(f"Created owner #{user.id} <{user.email}>")

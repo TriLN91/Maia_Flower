@@ -35,7 +35,4 @@ async def me(user: CurrentStaff) -> StaffOut:
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(session: SessionDep, user: CurrentStaff, body: ChangePasswordIn) -> None:
-    try:
-        await staff_service.change_password(session, user, body.current_password, body.new_password)
-    except staff_service.StaffError as e:
-        raise HTTPException(e.status_code, detail=e.message) from None
+    await staff_service.change_password(session, user, body.current_password, body.new_password)

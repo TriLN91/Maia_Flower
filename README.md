@@ -42,6 +42,15 @@ docker compose exec api alembic revision --autogenerate -m "mô tả"   # tạo 
 
 Code trong `backend/` được mount vào container, sửa code là API tự reload.
 
+### Định dạng lỗi
+
+Mọi lỗi nghiệp vụ trả về cùng một dạng, frontend dựa vào `code` để xử lý:
+
+```json
+{"detail": "Flower type is used by active bouquet templates", "code": "FLOWER_IN_USE",
+ "extra": {"templates": ["Đỏ Rực"]}}
+```
+
 > **Vì sao chạy Python trong Docker?** Một số máy Windows bật Smart App Control sẽ chặn các
 > thư viện biên dịch sẵn (asyncpg, SQLAlchemy). Chạy trong container Linux tránh được việc này
 > và giống môi trường deploy thật.
@@ -65,6 +74,6 @@ docker-compose.yml
 ## Tiến độ
 
 - [x] **Ngày 1:** khung dự án, Docker, migration, CI, đăng nhập JWT + phân quyền staff/owner
-- [ ] Ngày 2: loại hoa, nhà cung cấp, mẫu bó hoa
+- [x] **Ngày 2:** loại hoa, nhà cung cấp, mẫu bó hoa (công thức, lịch sử giá, slug tiếng Việt), API công khai cho khách
 - [ ] Ngày 3: nhập lô, sổ kho, độ tươi
 - [ ] …

@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     1/14 ngày (~7%)
+       ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     2/14 ngày (~14%)
 ```
 
 ---
@@ -60,7 +60,7 @@ Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
 
 ## Phần 3 — Kế hoạch chi tiết từng ngày
 
-### 📦 Ngày 2 — Danh mục: loại hoa, nhà cung cấp, mẫu bó hoa
+### 📦 Ngày 2 — Danh mục: loại hoa, nhà cung cấp, mẫu bó hoa ✅
 
 **Bảng mới**
 ```
@@ -79,7 +79,8 @@ template_price_history(id, template_id, old_price, new_price, changed_by, change
 | PATCH | `/admin/flower-types/{id}` | owner |
 | GET/POST/PATCH | `/admin/suppliers` | owner |
 | GET/POST | `/admin/templates` | staff xem, owner sửa |
-| GET/PUT/PATCH | `/admin/templates/{id}` (PUT thay cả công thức) | owner |
+| GET/PATCH | `/admin/templates/{id}` | staff xem, owner sửa |
+| PUT | `/admin/templates/{id}/items` (thay cả công thức) | owner |
 | GET | `/admin/templates/{id}/price-history` | owner |
 | GET | `/shop/templates` (chỉ mẫu đang bán, phân trang, lọc theo giá) | công khai |
 | GET | `/shop/templates/{slug}` | công khai |

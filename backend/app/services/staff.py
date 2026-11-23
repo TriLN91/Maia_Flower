@@ -2,18 +2,10 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.errors import AppError, ConflictError, NotFoundError
 from app.core.security import hash_password, verify_password
 from app.models.staff_user import StaffRole, StaffUser
 from app.schemas.staff import StaffCreate, StaffUpdate
-
-
-class StaffError(Exception):
-    """Lỗi nghiệp vụ; tầng API chuyển thành HTTP 4xx."""
-
-    def __init__(self, message: str, status_code: int = 400):
-        super().__init__(message)
-        self.message = message
-        self.status_code = status_code
 
 
 async def authenticate(session: AsyncSession, email: str, password: str) -> StaffUser | None:
@@ -37,7 +29,7 @@ async def create_staff(session: AsyncSession, data: StaffCreate) -> StaffUser:
         await session.commit()
     except IntegrityError:
         await session.rollback()
-        raise StaffError("Email already registered", status_code=409) from None
+        raise ConflictError("Email already registered", code="EMAIL_TAKEN") from None
     await session.refresh(user)
     return user
 
@@ -59,7 +51,7 @@ async def update_staff(
 ) -> StaffUser:
     user = await session.get(StaffUser, user_id)
     if user is None:
-        raise StaffError("Staff user not found", status_code=404)
+        raise NotFoundError("Staff user not found")
 
     changes = data.model_dump(exclude_unset=True)
 
@@ -75,11 +67,11 @@ async def update_staff(
 
     if loses_owner():
         if user.id == actor.id:
-            raise StaffError("You cannot demote or deactivate yourself")
+            raise AppError("You cannot demote or deactivate yourself", code="CANNOT_DEMOTE_SELF")
         active_owners = await _lock_active_owner_count(session)
         await session.refresh(user)  # đọc lại sau khi đã giữ khóa
         if loses_owner() and active_owners <= 1:
-            raise StaffError("Shop must keep at least one active owner")
+            raise AppError("Shop must keep at least one active owner", code="LAST_OWNER")
 
     if "password" in changes:
         user.password_hash = hash_password(changes.pop("password"))
@@ -95,6 +87,6 @@ async def change_password(
     session: AsyncSession, user: StaffUser, current_password: str, new_password: str
 ) -> None:
     if not verify_password(current_password, user.password_hash):
-        raise StaffError("Current password is incorrect")
+        raise AppError("Current password is incorrect", code="WRONG_PASSWORD")
     user.password_hash = hash_password(new_password)
     await session.commit()
