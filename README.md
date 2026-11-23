@@ -75,5 +75,6 @@ docker-compose.yml
 
 - [x] **Ngày 1:** khung dự án, Docker, migration, CI, đăng nhập JWT + phân quyền staff/owner
 - [x] **Ngày 2:** loại hoa, nhà cung cấp, mẫu bó hoa (công thức, lịch sử giá, slug tiếng Việt), API công khai cho khách
-- [ ] Ngày 3: nhập lô, sổ kho, độ tươi
+- [x] **Ngày 3:** nhập lô, sổ kho bất biến, độ tươi, hao hụt/kiểm kê, tồn kho tổng hợp, giá vốn mẫu + cảnh báo biên lợi nhuận (có test đồng thời)
+- [ ] Ngày 4: checkout — FEFO cho cả giỏ, giữ hoa + khung giờ
 - [ ] …

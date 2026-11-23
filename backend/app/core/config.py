@@ -28,6 +28,14 @@ class Settings(BaseSettings):
 
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
+    # --- Kho & định giá (ngày 8 sẽ chuyển sang bảng shop_settings để chủ shop sửa trên web) ---
+    # Lô hết hạn trong số ngày này được tính là "sắp hết hạn"
+    expiring_soon_days: int = Field(default=2, ge=1, le=14)
+    # Trần giảm giá động cho một mẫu (%)
+    max_discount_pct: int = Field(default=30, ge=0, le=90)
+    # Biên lợi nhuận tối thiểu trên giá vốn (%) — giá bán sau giảm không được thấp hơn
+    min_margin_pct: int = Field(default=20, ge=0, le=500)
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def split_origins(cls, value: object) -> object:

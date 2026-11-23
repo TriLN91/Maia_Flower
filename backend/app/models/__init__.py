@@ -7,12 +7,17 @@ from app.models.catalog import (
     TemplateItem,
     TemplatePriceHistory,
 )
+from app.models.inventory import Batch, BatchStatus, InventoryMovement, MovementType
 from app.models.staff_user import StaffRole, StaffUser
 
 __all__ = [
     "Base",
+    "Batch",
+    "BatchStatus",
     "BouquetTemplate",
     "FlowerType",
+    "InventoryMovement",
+    "MovementType",
     "StaffRole",
     "StaffUser",
     "Supplier",

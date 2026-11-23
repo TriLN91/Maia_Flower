@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     2/14 ngày (~14%)
+       ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     3/14 ngày (~21%)
 ```
 
 ---
@@ -97,7 +97,7 @@ template_price_history(id, template_id, old_price, new_price, changed_by, change
 
 ---
 
-### 🌷 Ngày 3 — Nhập lô, sổ kho, độ tươi (tính năng A, phần 1)
+### 🌷 Ngày 3 — Nhập lô, sổ kho, độ tươi (tính năng A, phần 1) ✅
 
 **Bảng mới**
 ```
@@ -105,7 +105,7 @@ batches(id, flower_type_id, supplier_id, quantity_received >0, quantity_availabl
         cost_per_stem, received_at, expected_expiry_at, freshness_override NULL|0..1,
         status[ACTIVE|NEEDS_REVIEW|DEPLETED|DISCARDED], created_by, timestamps)
         INDEX(flower_type_id, status, expected_expiry_at)   ← phục vụ FEFO
-inventory_movements(id, batch_id, order_id NULL, type[IMPORT|RESERVE|RELEASE|SELL|WASTE|ADJUST],
+inventory_movements(id, batch_id, order_id NULL, type[IMPORT|RESERVE|RELEASE|WASTE|ADJUST],
                     quantity (âm/dương), reason, created_by NULL, created_at)
 ```
 
@@ -116,7 +116,8 @@ inventory_movements(id, batch_id, order_id NULL, type[IMPORT|RESERVE|RELEASE|SEL
 | GET | `/admin/batches?flower_type_id=&status=` | Kèm độ tươi tính sẵn |
 | PATCH | `/admin/batches/{id}` | Sửa hạn, hạ độ tươi thủ công |
 | POST | `/admin/batches/{id}/waste` | Ghi hoa hỏng (số lượng + lý do) |
-| POST | `/admin/batches/{id}/adjust` | Điều chỉnh kiểm kê (owner) |
+| POST | `/admin/batches/{id}/adjust` | Kiểm kê: nhập số đếm thực tế (owner) |
+| POST | `/admin/batches/{id}/discard` | Bỏ phần còn lại, đóng lô (owner) |
 | GET | `/admin/inventory` | Tổng hợp theo loại hoa: tồn, số cành sắp hết hạn, độ tươi TB |
 | GET | `/admin/batches/{id}/movements` | Lịch sử sổ kho |
 | GET | `/admin/templates/{id}/cost` | Giá vốn hiện tại + cảnh báo biên lợi nhuận |
@@ -130,6 +131,8 @@ inventory_movements(id, batch_id, order_id NULL, type[IMPORT|RESERVE|RELEASE|SEL
 **Test**: nhập lô, ghi hỏng vượt tồn bị từ chối, bất biến sổ kho, độ tươi theo thời gian (dùng thời gian giả lập), giá vốn & cảnh báo.
 
 **Xong khi**: nhập 3 lô hồng khác ngày, xem được độ tươi từng lô và tổng tồn.
+
+> **Ghi chú khi làm:** bỏ loại movement `SELL` — bán xong không làm đổi số còn bán được (hoa đã bị trừ lúc giữ chỗ), trạng thái bán sẽ nằm ở `order_allocations` (ngày 4). Nhờ vậy bất biến *tồn = tổng sổ kho* luôn đúng. Trần giảm giá (30%) và biên tối thiểu (20%) tạm để trong cấu hình môi trường, ngày 8 chuyển sang `shop_settings`.
 
 ---
 
