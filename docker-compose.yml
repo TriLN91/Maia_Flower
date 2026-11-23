@@ -1,0 +1,59 @@
+name: maia-flower
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-maia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-maia_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-maia_flower}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-maia} -d ${POSTGRES_DB:-maia_flower}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # API chạy trong container (Linux) với code được mount vào -> sửa code là tự reload.
+  #   docker compose up -d --build            # chạy API ở http://localhost:8000/docs
+  #   docker compose exec api pytest          # chạy test
+  api:
+    build:
+      context: ./backend
+      args:
+        INSTALL_DEV: "1"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-maia}:${POSTGRES_PASSWORD:-maia_dev_password}@postgres:5432/${POSTGRES_DB:-maia_flower}
+      TEST_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-maia}:${POSTGRES_PASSWORD:-maia_dev_password}@postgres:5432/maia_flower_test
+      REDIS_URL: redis://redis:6379/0
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ./backend:/app
+      - /app/.venv  # không để .venv của Windows lọt vào container
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
