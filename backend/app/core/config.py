@@ -36,8 +36,15 @@ class Settings(BaseSettings):
     booking_window_days: int = Field(default=7, ge=1, le=60)
     # Thời gian giữ hoa + khung giờ chờ khách thanh toán
     hold_minutes: int = Field(default=15, ge=1, le=120)
-    # Phí ship cố định tạm thời — ngày 5 thay bằng phí theo khoảng cách (Goong)
-    flat_delivery_fee: int = Field(default=30_000, ge=0)
+    # Báo giá ship có hiệu lực trong bấy nhiêu phút
+    delivery_quote_minutes: int = Field(default=15, ge=1, le=120)
+
+    # --- Bản đồ (Goong). Không có key -> tính đường chim bay × hệ số đường vòng ---
+    goong_api_key: str | None = None
+    goong_base_url: str = "https://rsapi.goong.io"
+    goong_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
+    # Quãng đường thực tế ≈ đường chim bay × hệ số này (dùng khi không gọi được Goong)
+    road_factor: float = Field(default=1.3, ge=1, le=3)
 
     # --- Kho & định giá (ngày 8 sẽ chuyển sang bảng shop_settings để chủ shop sửa trên web) ---
     # Lô hết hạn trong số ngày này được tính là "sắp hết hạn"

@@ -41,6 +41,10 @@ def _no_duplicate_templates(lines: list[CartLineIn]) -> list[CartLineIn]:
 
 class CartQuoteIn(BaseModel):
     items: Cart
+    delivery_quote_token: str | None = Field(
+        default=None, description="Token từ /shop/delivery/quote — có thì tính luôn phí ship"
+    )
+    delivery_date: date | None = Field(default=None, description="Để tính phụ phí ngày lễ")
 
     _check = field_validator("items")(_no_duplicate_templates)
 
@@ -59,7 +63,7 @@ class CartQuoteOut(BaseModel):
     lines: list[QuoteLineOut]
     subtotal: int
     discount_total: int
-    delivery_fee: int
+    delivery_fee: int | None = Field(description="null nếu chưa có địa chỉ (chưa có quote token)")
     total: int
     all_available: bool
 
@@ -86,8 +90,9 @@ class OrderCreate(BaseModel):
     recipient_name: Name | None = None
     recipient_phone: VNPhone | None = None
     delivery_address: Annotated[str, Field(min_length=5, max_length=500)]
-    delivery_lat: Annotated[float, Field(ge=-90, le=90)] | None = None
-    delivery_lng: Annotated[float, Field(ge=-180, le=180)] | None = None
+    delivery_quote_token: str = Field(
+        description="Token từ /shop/delivery/quote: chứa tọa độ + quãng đường đã được server ký"
+    )
     delivery_date: date
     slot_id: int
     card_message: Annotated[str, Field(max_length=300)] | None = None
@@ -159,6 +164,7 @@ class OrderAdminOut(BaseModel):
     delivery_address: str
     delivery_lat: float | None
     delivery_lng: float | None
+    delivery_distance_km: float | None
     delivery_starts_at: datetime
     delivery_ends_at: datetime
     card_message: str | None

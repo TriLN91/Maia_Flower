@@ -77,5 +77,6 @@ docker-compose.yml
 - [x] **Ngày 2:** loại hoa, nhà cung cấp, mẫu bó hoa (công thức, lịch sử giá, slug tiếng Việt), API công khai cho khách
 - [x] **Ngày 3:** nhập lô, sổ kho bất biến, độ tươi, hao hụt/kiểm kê, tồn kho tổng hợp, giá vốn mẫu + cảnh báo biên lợi nhuận (có test đồng thời)
 - [x] **Ngày 4:** checkout không cần đăng nhập — FEFO cho cả giỏ, giữ hoa + khung giờ 15 phút, idempotency, theo dõi đơn (test 50 request đồng thời: không bán vượt)
-- [ ] Ngày 5: phí ship theo khoảng cách (Goong), quản lý khung giờ
+- [x] **Ngày 5:** phí ship theo quãng đường (Goong + Haversine dự phòng, cache Redis), báo giá ship có chữ ký, cài đặt giao hàng, quản lý khung giờ + ghi đè theo ngày
+- [ ] Ngày 6: thanh toán mock, job nền Celery, quy trình đơn
 - [ ] …

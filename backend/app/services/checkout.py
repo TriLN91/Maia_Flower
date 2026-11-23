@@ -5,7 +5,7 @@ import secrets
 from collections import defaultdict, deque
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -26,8 +26,11 @@ from app.models import (
     OrderStatus,
 )
 from app.schemas.orders import CartLineIn, CartQuoteOut, OrderCreate, QuoteLineOut
+from app.services.delivery_fee import compute_fee
+from app.services.delivery_quote import verify_quote
 from app.services.delivery_slots import reserve_slot, shop_tz, slot_window
 from app.services.inventory import apply_movement
+from app.services.shop_settings import get_delivery_settings
 
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # bỏ 0/O, 1/I dễ nhầm khi đọc qua điện thoại
 
@@ -106,7 +109,12 @@ def _sellable_filter(deliver_by: datetime):
 # Báo giá (không giữ gì)
 # =====================================================================
 async def quote_cart(
-    session: AsyncSession, lines: Sequence[CartLineIn], now: datetime
+    session: AsyncSession,
+    lines: Sequence[CartLineIn],
+    now: datetime,
+    *,
+    delivery_quote_token: str | None = None,
+    delivery_date: date | None = None,
 ) -> CartQuoteOut:
     templates = await _load_templates(session, lines)
     priced = _price(lines, templates)
@@ -137,13 +145,21 @@ async def quote_cart(
     ]
     subtotal = sum(p.unit_price * p.quantity for p in priced)
     discount = sum(p.discount_amount for p in priced)
-    fee = get_settings().flat_delivery_fee
+    fee = None
+    if delivery_quote_token:
+        claims = verify_quote(delivery_quote_token)
+        fee = compute_fee(
+            claims.distance_km,
+            settings=await get_delivery_settings(session),
+            delivery_date=delivery_date,
+            subtotal=subtotal - discount,
+        ).total
     return CartQuoteOut(
         lines=out_lines,
         subtotal=subtotal,
         discount_total=discount,
         delivery_fee=fee,
-        total=subtotal - discount + fee,
+        total=subtotal - discount + (fee or 0),
         all_available=not short_flowers,
     )
 
@@ -237,9 +253,19 @@ async def create_order(
     if (replayed := await _replay(session, idempotency_key, fp)) is not None:
         return replayed, True
 
+    # Kiểm tra báo giá ship TRƯỚC khi khóa bất cứ thứ gì (lỗi rẻ thì báo sớm)
+    quote = verify_quote(data.delivery_quote_token)
     templates = await _load_templates(session, data.items)
     priced = _price(data.items, templates)
     demand = _flower_demand(priced)
+    subtotal = sum(p.unit_price * p.quantity for p in priced)
+    discount = sum(p.discount_amount for p in priced)
+    fee = compute_fee(
+        quote.distance_km,
+        settings=await get_delivery_settings(session),
+        delivery_date=data.delivery_date,
+        subtotal=subtotal - discount,
+    ).total
 
     # 1) Khung giờ trước (khóa 1 dòng), 2) rồi tới các lô — cùng thứ tự ở mọi giao dịch
     slot_day = await reserve_slot(session, data.slot_id, data.delivery_date, now)
@@ -248,9 +274,6 @@ async def create_order(
     grouped = await _lock_batches(session, sorted(demand), ends_at)
     await _raise_shortage(session, demand, grouped)
 
-    subtotal = sum(p.unit_price * p.quantity for p in priced)
-    discount = sum(p.discount_amount for p in priced)
-    fee = get_settings().flat_delivery_fee
     order = Order(
         code=await _new_code(session, now),
         tracking_token=secrets.token_urlsafe(32),
@@ -262,8 +285,9 @@ async def create_order(
         recipient_name=data.recipient_name,
         recipient_phone=data.recipient_phone,
         delivery_address=data.delivery_address,
-        delivery_lat=data.delivery_lat,
-        delivery_lng=data.delivery_lng,
+        delivery_lat=quote.lat,
+        delivery_lng=quote.lng,
+        delivery_distance_km=quote.distance_km,
         delivery_slot_day_id=slot_day.id,
         delivery_starts_at=starts_at,
         delivery_ends_at=ends_at,

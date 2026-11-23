@@ -26,8 +26,15 @@ def public_order(order: Order, *, with_token: bool = False) -> OrderPublicOut:
 
 @router.post("/cart/quote", response_model=CartQuoteOut)
 async def quote_cart(session: SessionDep, body: CartQuoteIn) -> CartQuoteOut:
-    """Tính lại giỏ hàng từ dữ liệu server (giá, còn hàng không). Không giữ hoa."""
-    return await checkout.quote_cart(session, body.items, utcnow())
+    """Tính lại giỏ hàng từ dữ liệu server (giá, còn hàng, phí ship nếu có quote token).
+    Không giữ hoa."""
+    return await checkout.quote_cart(
+        session,
+        body.items,
+        utcnow(),
+        delivery_quote_token=body.delivery_quote_token,
+        delivery_date=body.delivery_date,
+    )
 
 
 @router.get("/delivery-slots", response_model=list[SlotAvailabilityOut])

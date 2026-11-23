@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     4/14 ngày (~29%)
+       ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     5/14 ngày (~36%)
 ```
 
 ---
@@ -189,7 +189,7 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 
 ---
 
-### 🚚 Ngày 5 — Phí ship theo khoảng cách (Goong) + quản lý khung giờ
+### 🚚 Ngày 5 — Phí ship theo khoảng cách (Goong) + quản lý khung giờ ✅
 
 **Việc cần bạn chuẩn bị trước ngày này**: đăng ký Goong, lấy **API key** và **Maptiles key**, đặt vào `.env` (`GOONG_API_KEY`, `GOONG_MAPTILES_KEY`). Chưa có thì hệ thống dùng Haversine.
 
@@ -210,6 +210,14 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 | GET/PUT | `/admin/settings/delivery` (bảng phí, bán kính, tọa độ shop) |
 
 **Test**: các ví dụ phí trong DESIGN (7,4 km → 42.000đ; 12 km → 69.000đ), > 15 km bị từ chối, phụ phí lễ, miễn phí ship, token bị sửa/hết hạn, Goong lỗi → Haversine (mock HTTP bằng `respx`).
+
+> **Ghi chú khi làm:**
+> - Bảng phí lưu thành **một dòng JSON trong `shop_settings`** (kiểm tra bằng Pydantic) thay cho bảng `delivery_fee_tiers` — đổi cả bảng phí trong một lần, không có trạng thái nửa cũ nửa mới. Bảng này cũng sẽ chứa cài đặt giảm giá ở ngày 8.
+> - Token báo giá chứa **tọa độ + quãng đường** (không chứa phí): lúc đặt hàng phí được tính lại từ quãng đường đã ký + giỏ hàng + ngày giao (phụ phí lễ, miễn phí ship). `OrderCreate` không còn nhận `delivery_lat/lng` từ client.
+> - Ngày lễ cấu hình dạng `MM-DD`; Ngày của Mẹ (ngày thay đổi theo năm) để ngày 9 cùng bảng hệ số lễ.
+> - **Chưa kiểm chứng với Goong thật**: trang tài liệu docs.goong.io lỗi chứng chỉ TLS lúc làm; client viết theo định dạng tương thích Google Places, test bằng respx. Cần chạy thử khi có `GOONG_API_KEY`.
+> - Rate limit cho autocomplete dời sang ngày 7 (cùng các rate limit khác).
+> - Không cho sửa giờ của khung đã có (đơn cũ tham chiếu) — tắt khung cũ, tạo khung mới; có kiểm tra chồng giờ.
 
 ---
 

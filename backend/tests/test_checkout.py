@@ -9,17 +9,16 @@ from sqlalchemy import func, select
 
 from app.core.db import SessionLocal
 from app.models import Batch, DeliverySlot, DeliverySlotDay, InventoryMovement, Order
+from app.services.delivery_quote import issue_quote
 
 ORDERS = "/api/v1/shop/orders"
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
-FLAT_FEE = 30_000
+DELIVERY_KM = 2.0
+DELIVERY_FEE = 20_000  # ≤ 3 km: phí cơ bản theo bảng phí mẫu
 
 
 def vn_today():
     return datetime.now(VN).date()
-
-
-TOMORROW = None  # tính lúc chạy test, xem fixture `tomorrow`
 
 
 @pytest.fixture
@@ -104,6 +103,7 @@ def place_order(client, slots, tomorrow):
             "delivery_address": "12 Nguyễn Huệ, Quận 1, TP.HCM",
             "delivery_date": str(day or tomorrow),
             "slot_id": slots[slot],
+            "delivery_quote_token": quote_token(),
             **overrides,
         }
         return await client.post(
@@ -111,6 +111,13 @@ def place_order(client, slots, tomorrow):
         )
 
     return _place
+
+
+def quote_token(km: float = DELIVERY_KM, *, now: datetime | None = None) -> str:
+    token, _ = issue_quote(
+        lat=10.78, lng=106.70, distance_km=km, provider="test", now=now or datetime.now(UTC)
+    )
+    return token
 
 
 async def batch_available(batch_id: int) -> int:
@@ -149,8 +156,8 @@ async def test_cart_quote(client, shop):
     assert r.status_code == 200
     q = r.json()
     assert q["subtotal"] == 2 * 200_000 + 350_000
-    assert q["delivery_fee"] == FLAT_FEE
-    assert q["total"] == q["subtotal"] + FLAT_FEE
+    assert q["delivery_fee"] is None  # chưa có địa chỉ
+    assert q["total"] == q["subtotal"]
     assert q["all_available"] is True  # 2×2 + 3 = 7 hồng ≤ 10
 
 
@@ -183,7 +190,8 @@ async def test_create_order_reserves_stock_and_slot(client, shop, place_order, o
     assert len(o["tracking_token"]) >= 40
     assert o["status"] == "pending_payment"
     assert o["subtotal"] == 400_000
-    assert o["total"] == 400_000 + FLAT_FEE
+    assert o["delivery_fee"] == DELIVERY_FEE
+    assert o["total"] == 400_000 + DELIVERY_FEE
     assert o["customer_phone_masked"] == "0909***456"
     hold = datetime.fromisoformat(o["hold_expires_at"]) - datetime.now(UTC)
     assert timedelta(minutes=14) < hold <= timedelta(minutes=15)
@@ -382,3 +390,59 @@ async def test_concurrent_orders_respect_slot_capacity(shop, place_order):
     assert statuses == [201] * 2 + [409] * 8
     async with SessionLocal() as s:
         assert await s.scalar(select(func.sum(DeliverySlotDay.reserved_count))) == 2
+
+
+# ================================================================ Phí ship trong đơn
+async def test_cart_quote_with_delivery_token(client, shop):
+    await shop["add_batch"]("rose", 10)
+    r = await client.post(
+        "/api/v1/shop/cart/quote",
+        json={
+            "items": [{"template_id": shop["red"], "quantity": 1}],
+            "delivery_quote_token": quote_token(7.4),
+        },
+    )
+    assert r.json()["delivery_fee"] == 42_000
+    assert r.json()["total"] == 200_000 + 42_000
+
+
+async def test_order_stores_distance_and_fee(client, shop, place_order, owner_headers):
+    await shop["add_batch"]("rose", 10)
+    r = await place_order([(shop["red"], 1)], delivery_quote_token=quote_token(12.0))
+    assert r.status_code == 201
+    assert r.json()["delivery_fee"] == 69_000
+
+    async with SessionLocal() as s:
+        order = await s.scalar(select(Order).where(Order.code == r.json()["code"]))
+    assert (order.delivery_distance_km, order.delivery_lat, order.delivery_lng) == (
+        12.0,
+        10.78,
+        106.70,
+    )
+
+
+async def test_free_shipping_applies_to_order(shop, place_order):
+    await shop["add_batch"]("rose", 100)
+    r = await place_order([(shop["red"], 8)], delivery_quote_token=quote_token(4.0))  # 1,6 triệu
+    assert r.json()["delivery_fee"] == 0
+
+
+@pytest.mark.parametrize(
+    ("token_factory", "code"),
+    [
+        (lambda: quote_token() + "x", "INVALID_DELIVERY_QUOTE"),
+        (lambda: quote_token(now=datetime.now(UTC) - timedelta(hours=1)), "DELIVERY_QUOTE_EXPIRED"),
+        (lambda: "not-a-token", "INVALID_DELIVERY_QUOTE"),
+        (lambda: quote_token(20.0), "OUT_OF_DELIVERY_RANGE"),
+    ],
+    ids=["tampered", "expired", "garbage", "out-of-range"],
+)
+async def test_bad_delivery_quote_rejects_order_without_holding_anything(
+    shop, place_order, token_factory, code
+):
+    batch = await shop["add_batch"]("rose", 10)
+    r = await place_order([(shop["red"], 1)], delivery_quote_token=token_factory())
+    assert r.status_code == 400
+    assert r.json()["code"] == code
+    assert await batch_available(batch) == 10
+    assert await count_orders() == 0

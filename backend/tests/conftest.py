@@ -7,6 +7,12 @@ if not TEST_DATABASE_URL:
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["APP_ENV"] = "test"
 os.environ.setdefault("JWT_SECRET", "test-secret-" + "x" * 40)
+# Redis của test dùng DB số 15 (dev dùng 0) vì mỗi test sẽ xóa sạch cache
+os.environ["REDIS_URL"] = os.environ.get("TEST_REDIS_URL") or (
+    os.environ.get("REDIS_URL", "redis://localhost:6379/0").rsplit("/", 1)[0] + "/15"
+)
+# Test mặc định chạy KHÔNG có Goong (Haversine); test nào cần thì tự bật bằng monkeypatch
+os.environ.pop("GOONG_API_KEY", None)
 
 from collections.abc import AsyncIterator, Awaitable, Callable  # noqa: E402
 from pathlib import Path  # noqa: E402
@@ -18,6 +24,7 @@ from sqlalchemy import text  # noqa: E402
 
 from alembic import command  # noqa: E402
 from app.core.db import SessionLocal  # noqa: E402
+from app.core.redis import get_redis  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Base, StaffRole, StaffUser  # noqa: E402
 from app.schemas.staff import StaffCreate  # noqa: E402
@@ -48,6 +55,7 @@ async def clean_tables(migrated_database: None) -> AsyncIterator[None]:
     # Dọn TRƯỚC mỗi test: migration có dữ liệu mặc định (vd. khung giờ) — test tự tạo dữ liệu
     # mình cần, không phụ thuộc dữ liệu seed.
     await _truncate_all()
+    await get_redis().flushdb()
     yield
 
 
