@@ -62,14 +62,6 @@ class Settings(BaseSettings):
     # Quãng đường thực tế ≈ đường chim bay × hệ số này (dùng khi không gọi được Goong)
     road_factor: float = Field(default=1.3, ge=1, le=3)
 
-    # --- Kho & định giá (ngày 8 sẽ chuyển sang bảng shop_settings để chủ shop sửa trên web) ---
-    # Lô hết hạn trong số ngày này được tính là "sắp hết hạn"
-    expiring_soon_days: int = Field(default=2, ge=1, le=14)
-    # Trần giảm giá động cho một mẫu (%)
-    max_discount_pct: int = Field(default=30, ge=0, le=90)
-    # Biên lợi nhuận tối thiểu trên giá vốn (%) — giá bán sau giảm không được thấp hơn
-    min_margin_pct: int = Field(default=20, ge=0, le=500)
-
     @field_validator("cors_origins", mode="before")
     @classmethod
     def split_origins(cls, value: object) -> object:

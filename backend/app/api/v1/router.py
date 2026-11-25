@@ -5,6 +5,7 @@ from app.api.v1 import (
     admin_delivery,
     admin_inventory,
     admin_orders,
+    admin_pricing,
     auth,
     health,
     payments,
@@ -26,3 +27,4 @@ api_router.include_router(admin_orders.router)
 api_router.include_router(shop_delivery.router)
 api_router.include_router(admin_delivery.router)
 api_router.include_router(payments.router)
+api_router.include_router(admin_pricing.router)

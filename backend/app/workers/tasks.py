@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.services.inventory import mark_expired_batches, utcnow
 from app.services.order_workflow import expire_overdue_orders
 from app.services.payments.service import handle_ipn
+from app.services.pricing import recompute
 from app.workers.celery_app import celery_app
 
 
@@ -45,3 +46,8 @@ def deliver_mock_ipn(params: dict[str, str]) -> str:
 @celery_app.task(name="app.workers.tasks.mark_expired_batches")
 def mark_expired_batches_task() -> int:
     return run_in_session(lambda s: mark_expired_batches(s, utcnow()))
+
+
+@celery_app.task(name="app.workers.tasks.recompute_pricing")
+def recompute_pricing() -> int:
+    return run_in_session(lambda s: recompute(s, utcnow())).templates_changed

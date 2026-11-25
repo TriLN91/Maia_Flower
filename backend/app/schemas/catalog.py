@@ -151,6 +151,13 @@ class TemplatePublicOut(BaseModel):
     image_url: str | None
     price: int
     items: list[TemplateItemOut]
+    discount_pct: int = 0
+    final_price: int | None = None  # = price × (100 − discount_pct) / 100
+
+    def with_discount(self, pct: int) -> "TemplatePublicOut":
+        return self.model_copy(
+            update={"discount_pct": pct, "final_price": self.price * (100 - pct) // 100}
+        )
 
 
 class PriceHistoryOut(BaseModel):

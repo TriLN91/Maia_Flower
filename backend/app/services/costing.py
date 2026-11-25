@@ -5,11 +5,11 @@ import math
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.models import Batch, BatchStatus
 from app.schemas.catalog import FlowerBrief
 from app.schemas.inventory import CostLine, TemplateCostOut
 from app.services.catalog import get_template
+from app.services.shop_settings import get_pricing_settings
 
 BELOW_COST = "BELOW_COST"
 LOW_MARGIN_AT_MAX_DISCOUNT = "LOW_MARGIN_AT_MAX_DISCOUNT"
@@ -38,7 +38,7 @@ async def unit_costs(session: AsyncSession, flower_type_ids: set[int]) -> dict[i
 
 
 async def template_cost(session: AsyncSession, template_id: int) -> TemplateCostOut:
-    settings = get_settings()
+    settings = await get_pricing_settings(session)
     template = await get_template(session, template_id)
     costs = await unit_costs(session, {i.flower_type_id for i in template.items})
 

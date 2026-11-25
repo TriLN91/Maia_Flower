@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░     7/14 ngày (~50%)
+       ██ ██ ██ ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░     8/14 ngày (~57%)
 ```
 
 ---
@@ -275,7 +275,7 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 
 ---
 
-### 🔥 Ngày 8 — Tính năng B: "Cần bán gấp" + giảm giá động tự động
+### 🔥 Ngày 8 — Tính năng B: "Cần bán gấp" + giảm giá động tự động ✅
 
 **Bảng mới**: `pricing_rules`, `urgency_scores`, `template_discounts`, `template_discount_log` (+ settings: trần giảm, biên tối thiểu, bước tối đa ±10đ%, kill switch, N ngày).
 
@@ -295,6 +295,14 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 | POST | `/admin/pricing/recompute` (chạy tay) |
 
 **Test**: ví dụ 12 cành/5 hồng giảm 20% → 8%; chạm sàn biên lợi nhuận; bước ±10; mẫu khóa; kill switch; hết dư thừa → gỡ giảm giá; giá đã snapshot trong đơn cũ không đổi.
+
+> **Ghi chú khi làm:**
+> - Cài đặt giảm giá (công tắc tổng, số ngày "sắp hết hạn", bậc giảm, trần, biên tối thiểu, bước, số ngày lịch sử) lưu ở `shop_settings["pricing"]`; bỏ các ngưỡng cứng trong `config.py`. Lưu cài đặt = tính lại ngay (tắt công tắc tổng có hiệu lực tức thì).
+> - Quyết định mức giảm là **hàm thuần** `decide_discount()`; giới hạn bước áp cho **cả hai chiều** (giảm giá tăng dần và gỡ dần), riêng tắt/khóa thì về 0 ngay.
+> - Nhu cầu dự kiến tạm = TB số cành bán/ngày trong 14 ngày qua × N ngày; ngày 9 thay bằng dự báo.
+> - Hai lần tính chạy cùng lúc được xếp hàng bằng `pg_advisory_xact_lock` (có test).
+> - Job Celery tính lại **mỗi giờ** (phút 5) thay vì "mỗi đêm + khi nhập lô" — đơn giản hơn và đủ nhanh; chủ shop bấm tay được qua `POST /admin/pricing/recompute`.
+> - Trên dữ liệu demo: Hồng phấn có 62 cành sắp hết hạn nhưng dự kiến bán 62,4 → **không giảm**; Cẩm tú cầu dư 6 cành → mẫu "Cẩm Tú Mộng Mơ" giảm 2%.
 
 ---
 

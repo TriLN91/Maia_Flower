@@ -52,3 +52,36 @@ class DeliverySettings(BaseModel):
         if self.tiers[-1].to_km < self.max_km:
             raise ValueError("Last tier must reach max_km")
         return self
+
+
+class DiscountTier(BaseModel):
+    """Lô còn ≤ `days_left_max` ngày (và đang dư thừa) -> loại hoa đó được giảm `pct`%."""
+
+    days_left_max: Annotated[float, Field(gt=0, le=14)]
+    pct: Annotated[int, Field(ge=0, le=90)]
+
+
+class PricingSettings(BaseModel):
+    # Công tắc tổng: tắt = mọi mẫu về giá gốc ngay lập tức
+    enabled: bool = True
+    # Lô hết hạn trong số ngày này được tính là "sắp hết hạn"
+    horizon_days: Annotated[float, Field(gt=0, le=14)] = 2
+    tiers: Annotated[list[DiscountTier], Field(min_length=1, max_length=10)] = [
+        DiscountTier(days_left_max=2, pct=10),
+        DiscountTier(days_left_max=1, pct=20),
+    ]
+    max_discount_pct: Annotated[int, Field(ge=0, le=90)] = 30  # trần giảm cho một mẫu
+    min_margin_pct: Annotated[int, Field(ge=0, le=500)] = 20  # giá sau giảm ≥ vốn × (1 + x%)
+    max_step_pct: Annotated[int, Field(ge=1, le=100)] = 10  # mỗi lần chạy đổi tối đa ±x điểm %
+    demand_lookback_days: Annotated[int, Field(ge=1, le=90)] = 14  # ước lượng nhu cầu (tới ngày 9)
+
+    @model_validator(mode="after")
+    def _tiers_within_horizon(self) -> Self:
+        if any(t.days_left_max > self.horizon_days for t in self.tiers):
+            raise ValueError("Every tier's days_left_max must be within horizon_days")
+        return self
+
+    def flower_discount(self, days_left: float) -> int:
+        """Bậc khắt khe nhất (ít ngày nhất) mà lô còn thỏa -> mức giảm lớn nhất áp dụng."""
+        matching = [t.pct for t in self.tiers if days_left <= t.days_left_max]
+        return max(matching, default=0)

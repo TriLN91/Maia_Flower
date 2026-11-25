@@ -18,6 +18,7 @@ from app.models.orders import (
     Payment,
     PaymentStatus,
 )
+from app.models.pricing import TemplateDiscount, TemplateDiscountLog, UrgencyScore
 from app.models.settings import ShopSetting
 from app.models.staff_user import StaffRole, StaffUser
 
@@ -43,5 +44,8 @@ __all__ = [
     "StaffUser",
     "Supplier",
     "TemplateItem",
+    "TemplateDiscount",
+    "TemplateDiscountLog",
     "TemplatePriceHistory",
+    "UrgencyScore",
 ]

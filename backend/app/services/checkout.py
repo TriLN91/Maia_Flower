@@ -26,6 +26,7 @@ from app.services.delivery_fee import compute_fee
 from app.services.delivery_quote import verify_quote
 from app.services.delivery_slots import reserve_slot, shop_tz, slot_window
 from app.services.order_workflow import record_event
+from app.services.pricing import current_discounts
 from app.services.reservations import Need, allocate_and_reserve, sellable_filter
 from app.services.shop_settings import get_delivery_settings
 
@@ -75,10 +76,18 @@ async def _load_templates(
     return templates
 
 
-def _price(lines: Sequence[CartLineIn], templates: dict[int, BouquetTemplate]) -> list[PricedLine]:
-    # discount_pct = 0 cho tới ngày 8 (giảm giá động)
+async def _price(
+    session: AsyncSession, lines: Sequence[CartLineIn], templates: dict[int, BouquetTemplate]
+) -> list[PricedLine]:
+    """Giá = giá mẫu (chủ shop nhập) − mức giảm động đang áp dụng (bộ máy "Cần bán gấp")."""
+    discounts = await current_discounts(session, templates)
     return [
-        PricedLine(templates[line.template_id], line.quantity, templates[line.template_id].price, 0)
+        PricedLine(
+            templates[line.template_id],
+            line.quantity,
+            templates[line.template_id].price,
+            discounts.get(line.template_id, 0),
+        )
         for line in lines
     ]
 
@@ -103,7 +112,7 @@ async def quote_cart(
     delivery_date: date | None = None,
 ) -> CartQuoteOut:
     templates = await _load_templates(session, lines)
-    priced = _price(lines, templates)
+    priced = await _price(session, lines, templates)
     demand = _flower_demand(priced)
 
     stock = dict(
@@ -198,7 +207,7 @@ async def create_order(
     # Kiểm tra báo giá ship TRƯỚC khi khóa bất cứ thứ gì (lỗi rẻ thì báo sớm)
     quote = verify_quote(data.delivery_quote_token)
     templates = await _load_templates(session, data.items)
-    priced = _price(data.items, templates)
+    priced = await _price(session, data.items, templates)
     subtotal = sum(p.unit_price * p.quantity for p in priced)
     discount = sum(p.discount_amount for p in priced)
     fee = compute_fee(

@@ -12,7 +12,6 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.errors import AppError, NotFoundError
 from app.models import (
     Batch,
@@ -25,6 +24,7 @@ from app.models import (
     Supplier,
 )
 from app.schemas.inventory import BatchCreate, BatchUpdate
+from app.services.shop_settings import get_pricing_settings
 
 # Lô ở các trạng thái này không còn tham gia bán hàng
 CLOSED_STATUSES = (BatchStatus.DISCARDED,)
@@ -316,7 +316,7 @@ class _Stock:
 
 async def inventory_summary(session: AsyncSession, now: datetime | None = None) -> list[_Stock]:
     now = now or utcnow()
-    soon = now + timedelta(days=get_settings().expiring_soon_days)
+    soon = now + timedelta(days=(await get_pricing_settings(session)).horizon_days)
 
     flowers = (
         await session.scalars(

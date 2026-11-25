@@ -98,5 +98,6 @@ docker-compose.yml
 - [x] **Ngày 5:** phí ship theo quãng đường (Goong + Haversine dự phòng, cache Redis), báo giá ship có chữ ký, cài đặt giao hàng, quản lý khung giờ + ghi đè theo ngày
 - [x] **Ngày 6:** thanh toán qua cổng giả lập ký HMAC-SHA512 kiểu VNPay, IPN idempotent, thanh toán về trễ, job Celery nhả đơn quá hạn, quy trình đơn (state machine) + nhật ký trạng thái
 - [x] **Ngày 7:** dữ liệu mô phỏng 12 tháng (tái lập bằng seed), job đêm đánh dấu lô quá hạn, API kiểm tra sổ kho, rate limit Redis (cửa sổ trượt, Lua nguyên tử)
-- [ ] Ngày 8: "Cần bán gấp" + giảm giá động tự động
+- [x] **Ngày 8:** bộ máy "Cần bán gấp" + giảm giá động tự động (trần, sàn biên lợi nhuận, giới hạn bước, khóa mẫu, công tắc tổng, nhật ký lý do), mục "Tươi nhất hôm nay"
+- [ ] Ngày 9: dự báo nhu cầu + gợi ý nhập hàng
 - [ ] …
