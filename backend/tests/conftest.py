@@ -13,6 +13,8 @@ os.environ["REDIS_URL"] = os.environ.get("TEST_REDIS_URL") or (
 )
 # Test mặc định chạy KHÔNG có Goong (Haversine); test nào cần thì tự bật bằng monkeypatch
 os.environ.pop("GOONG_API_KEY", None)
+# Return URL mặc định về API (test kiểm tra luồng redirect của chính backend)
+os.environ.pop("PAYMENT_RETURN_URL", None)
 # Tắt rate limit mặc định (test đồng thời bắn 50 request); test_rate_limit.py tự bật lại
 os.environ["RATE_LIMIT_ENABLED"] = "false"
 

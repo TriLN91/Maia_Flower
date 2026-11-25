@@ -10,7 +10,11 @@ Tài liệu thiết kế đầy đủ: [docs/DESIGN.md](docs/DESIGN.md)
 
 ## Công nghệ
 
-FastAPI · SQLAlchemy 2 (async) · PostgreSQL · Redis · Alembic · pytest · Docker Compose · GitHub Actions
+**Backend:** FastAPI · SQLAlchemy 2 (async) · PostgreSQL · Redis · Celery · Alembic · pytest
+
+**Frontend:** React 19 · TypeScript · Vite · Tailwind CSS · TanStack Query · React Router · Leaflet (OpenStreetMap)
+
+**Hạ tầng:** Docker Compose · GitHub Actions
 
 ## Chạy dự án
 
@@ -21,6 +25,8 @@ cp .env.example .env          # rồi đặt JWT_SECRET ngẫu nhiên
 docker compose up -d --build  # Postgres + Redis + API (tự chạy migration) + Celery worker
 ```
 
+- Web cho khách: chạy `npm --prefix frontend install` rồi `npm --prefix frontend run dev` → http://localhost:5173
+  (hoặc trong Docker: `docker compose --profile web up -d`)
 - API docs (Swagger): http://localhost:8000/docs
 - Kiểm tra sức khỏe: http://localhost:8000/api/v1/health
 
@@ -112,5 +118,6 @@ docker-compose.yml
 - [x] **Ngày 7:** dữ liệu mô phỏng 12 tháng (tái lập bằng seed), job đêm đánh dấu lô quá hạn, API kiểm tra sổ kho, rate limit Redis (cửa sổ trượt, Lua nguyên tử)
 - [x] **Ngày 8:** bộ máy "Cần bán gấp" + giảm giá động tự động (trần, sàn biên lợi nhuận, giới hạn bước, khóa mẫu, công tắc tổng, nhật ký lý do), mục "Tươi nhất hôm nay"
 - [x] **Ngày 9:** dự báo nhu cầu (thứ trong tuần × hệ số lễ, khử mùa vụ), gợi ý nhập hàng, backtest cuộn — WAPE 40,4% so với 46,0% (TB 14 ngày) và 58,3% (cùng thứ tuần trước); bộ máy giảm giá dùng dự báo
-- [ ] Ngày 10–11: frontend cho khách
+- [x] **Ngày 10–11:** web cho khách (mobile-first): trang chủ + "Tươi nhất hôm nay", chi tiết mẫu, giỏ hàng, đặt hàng với bản đồ ghim vị trí + phí ship + khung giờ, thanh toán qua cổng giả lập, theo dõi đơn có đếm ngược giữ hoa, "Đơn của tôi"
+- [ ] Ngày 12: trang quản trị
 - [ ] …

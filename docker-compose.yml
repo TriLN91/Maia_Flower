@@ -43,6 +43,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-maia}:${POSTGRES_PASSWORD:-maia_dev_password}@postgres:5432/${POSTGRES_DB:-maia_flower}
       TEST_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-maia}:${POSTGRES_PASSWORD:-maia_dev_password}@postgres:5432/maia_flower_test
       REDIS_URL: redis://redis:6379/0
+      # Cổng thanh toán giả lập trả khách về trang kết quả của frontend
+      PAYMENT_RETURN_URL: ${PAYMENT_RETURN_URL:-http://localhost:5173/payment-result}
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - ./backend:/app
@@ -77,6 +79,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  # Frontend (Vite dev server). Trên máy dev có thể chạy thẳng: npm --prefix frontend run dev
+  web:
+    image: node:22-alpine
+    working_dir: /web
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    environment:
+      API_PROXY_TARGET: http://api:8000
+    volumes:
+      - ./frontend:/web
+      - /web/node_modules  # node_modules của Linux, tách khỏi bản Windows
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    profiles: ["web"]
 
 volumes:
   pgdata:

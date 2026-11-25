@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     )
     # URL công khai của API (cổng thanh toán redirect/IPN về đây)
     public_base_url: str = "http://localhost:8000"
+    # Trang kết quả thanh toán của frontend; trống = trả JSON ở API (dùng khi chưa có web)
+    payment_return_url: str | None = None
 
     # --- Bản đồ (Goong). Không có key -> tính đường chim bay × hệ số đường vòng ---
     goong_api_key: str | None = None

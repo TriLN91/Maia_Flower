@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ██ ██ ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░     9/14 ngày (~64%)
+       ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ░░ ░░ ░░     11/14 ngày (~79%)
 ```
 
 ---
@@ -333,7 +333,7 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 
 ---
 
-### 📱 Ngày 10–11 — Frontend cho khách (React + Vite + Tailwind, mobile-first)
+### 📱 Ngày 10–11 — Frontend cho khách (React + Vite + Tailwind, mobile-first) ✅
 
 **Khởi tạo**: `frontend/`, React Router, TanStack Query, client API sinh từ OpenAPI (hoặc viết tay gọn), thêm service `web` vào docker-compose, thêm job CI build frontend.
 
@@ -349,6 +349,15 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 | Theo dõi đơn | Trạng thái theo thời gian, ảnh mẫu, thông tin giao |
 
 **Yêu cầu chất lượng**: dùng tốt ở màn 375px, nút ≥ 44px, có trạng thái loading/lỗi/rỗng, đếm ngược 15 phút giữ hoa, chặn bấm "Đặt hàng" 2 lần.
+
+> **Ghi chú khi làm:**
+> - Node chạy được trực tiếp trên Windows (Smart App Control không chặn esbuild/Rollup/Tailwind), nên frontend dev trên máy; Docker có service `web` (profile `web`) để chạy đồng bộ.
+> - Bản đồ dùng **Leaflet + OpenStreetMap** (không cần khóa): chạm để ghim, kéo ghim, "Dùng vị trí của tôi"; ô gợi ý địa chỉ chỉ hiện khi backend có Goong (`GET /shop/info` cho biết).
+> - Backend thêm `GET /shop/info` và `PAYMENT_RETURN_URL` để cổng giả lập trả khách về trang `/payment-result` của web (trang này chỉ hiển thị, hỏi lại tới khi IPN xác nhận).
+> - Idempotency-Key giữ nguyên khi bấm lại cùng nội dung; đổi nội dung thì tạo khóa mới. Mã lỗi backend được dịch sang câu tiếng Việt theo `code`.
+> - Khách không có tài khoản → mã đơn + tracking token lưu ở localStorage cho trang "Đơn của tôi".
+> - Đã chạy thử trọn luồng trên trình duyệt ở khổ 375×812: thêm vào giỏ → ghim vị trí (1,6 km, ship 20.000đ) → chọn khung giờ → đặt → cổng giả lập → thanh toán thành công → theo dõi đơn. Lỗi phát hiện khi chạy: Chrome mới trả Promise từ `window.scrollTo()` khiến `useEffect(() => window.scrollTo(0,0))` vỡ — đã sửa.
+> - CI thêm job frontend: `npm ci` + type-check + build.
 
 ---
 

@@ -265,3 +265,27 @@ async def test_override_slot_day(client, owner_headers):
     assert closed.json()["is_closed"] is True
     shop = (await client.get("/api/v1/shop/delivery-slots", params={"date": day})).json()
     assert (shop[0]["bookable"], shop[0]["reason"]) == (False, "CLOSED")
+
+
+async def test_public_shop_info(client):
+    info = (await client.get("/api/v1/shop/info")).json()
+    assert (info["shop_lat"], info["shop_lng"]) == SHOP
+    assert info["max_delivery_km"] == 15
+    assert info["hold_minutes"] == 15
+    assert info["address_search_enabled"] is False
+
+
+async def test_payment_return_url_can_point_to_frontend(monkeypatch):
+    from app.services.payments.provider import get_provider
+
+    monkeypatch.setattr(
+        get_settings(), "payment_return_url", "http://localhost:5173/payment-result"
+    )
+    url = get_provider().payment_url(
+        txn_ref="T1",
+        amount=1000,
+        order_info="x",
+        now=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+    )
+    assert "vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A5173%2Fpayment-result" in url

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Path, Query
 from pydantic import BaseModel, Field
 
 from app.api.deps import SessionDep
+from app.core.config import get_settings
 from app.core.rate_limit import limit_by_ip
 from app.schemas.orders import CartLineIn
 from app.services import checkout, maps
@@ -14,6 +15,20 @@ from app.services.inventory import utcnow
 from app.services.shop_settings import get_delivery_settings
 
 router = APIRouter(prefix="/shop", tags=["shop: delivery"])
+
+
+class ShopInfoOut(BaseModel):
+    shop_address: str
+    shop_lat: float
+    shop_lng: float
+    max_delivery_km: float
+    base_fee: int
+    base_km: float
+    free_ship_min_subtotal: int | None
+    free_ship_max_km: float
+    hold_minutes: int
+    booking_window_days: int
+    address_search_enabled: bool
 
 
 class SuggestionOut(BaseModel):
@@ -49,6 +64,26 @@ class DeliveryQuoteOut(BaseModel):
     fee: int
     quote_token: str
     expires_at: datetime
+
+
+@router.get("/info", response_model=ShopInfoOut)
+async def shop_info(session: SessionDep) -> ShopInfoOut:
+    """Thông tin công khai cho trang đặt hàng: vị trí shop, vùng giao, quy tắc giữ hoa."""
+    d = await get_delivery_settings(session)
+    s = get_settings()
+    return ShopInfoOut(
+        shop_address=d.shop_address,
+        shop_lat=d.shop_lat,
+        shop_lng=d.shop_lng,
+        max_delivery_km=d.max_km,
+        base_fee=d.base_fee,
+        base_km=d.base_km,
+        free_ship_min_subtotal=d.free_ship_min_subtotal,
+        free_ship_max_km=d.free_ship_max_km,
+        hold_minutes=s.hold_minutes,
+        booking_window_days=s.booking_window_days,
+        address_search_enabled=bool(s.goong_api_key),
+    )
 
 
 @router.get(

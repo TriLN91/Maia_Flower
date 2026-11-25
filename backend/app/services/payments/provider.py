@@ -55,9 +55,10 @@ class MockProvider:
     name = "mock"
     TMN_CODE = "MAIAMOCK"
 
-    def __init__(self, secret: str, public_base_url: str):
+    def __init__(self, secret: str, public_base_url: str, return_url: str | None = None):
         self.secret = secret
         self.base = public_base_url.rstrip("/")
+        self.return_url = return_url or f"{self.base}/api/v1/payments/mock/return"
 
     def payment_url(
         self, *, txn_ref: str, amount: int, order_info: str, now: datetime, expires_at: datetime
@@ -72,7 +73,7 @@ class MockProvider:
             "vnp_OrderInfo": order_info,
             "vnp_OrderType": "other",
             "vnp_Locale": "vn",
-            "vnp_ReturnUrl": f"{self.base}/api/v1/payments/mock/return",
+            "vnp_ReturnUrl": self.return_url,
             "vnp_IpAddr": "127.0.0.1",
             "vnp_CreateDate": vnp_time(now),
             "vnp_ExpireDate": vnp_time(expires_at),
@@ -94,4 +95,4 @@ class MockProvider:
 
 def get_provider() -> PaymentProvider:
     s = get_settings()
-    return MockProvider(s.mock_pay_secret, s.public_base_url)
+    return MockProvider(s.mock_pay_secret, s.public_base_url, s.payment_return_url)
