@@ -34,6 +34,7 @@ from app.models import (
 )
 from app.schemas.settings import PricingSettings
 from app.services.costing import unit_costs
+from app.services.forecasting import expected_demand as forecast_demand
 from app.services.inventory import batch_freshness
 from app.services.reservations import sellable_filter
 from app.services.shop_settings import get_pricing_settings
@@ -119,9 +120,8 @@ class FlowerUrgency:
 async def estimate_demand(
     session: AsyncSession, now: datetime, settings: PricingSettings
 ) -> dict[int, float]:
-    """Số cành dự kiến bán trong `horizon_days` tới = TB/ngày của `demand_lookback_days` qua.
-
-    Bản đơn giản cho ngày 8; ngày 9 thay bằng dự báo theo thứ trong tuần × hệ số lễ."""
+    """Dự phòng khi chưa có dự báo: TB số cành bán/ngày trong `demand_lookback_days` qua
+    × `horizon_days`."""
     since = now - timedelta(days=settings.demand_lookback_days)
     rows = (
         await session.execute(
@@ -148,7 +148,10 @@ async def compute_urgency(
     for b in batches:
         if b.expected_expiry_at <= soon:
             by_flower[b.flower_type_id].append(b)
-    demand = await estimate_demand(session, now, settings)
+    # Ưu tiên dự báo (thứ trong tuần × hệ số lễ); chưa có thì dùng TB lịch sử gần đây
+    demand = await forecast_demand(session, now, settings.horizon_days)
+    if demand is None:
+        demand = await estimate_demand(session, now, settings)
 
     out = []
     for f in flowers:

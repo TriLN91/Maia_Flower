@@ -8,6 +8,7 @@ from app.models.catalog import (
     TemplatePriceHistory,
 )
 from app.models.delivery import DeliverySlot, DeliverySlotDay
+from app.models.forecasting import DemandForecast, HolidayFactor
 from app.models.inventory import Batch, BatchStatus, InventoryMovement, MovementType
 from app.models.orders import (
     Order,
@@ -29,7 +30,9 @@ __all__ = [
     "BouquetTemplate",
     "DeliverySlot",
     "DeliverySlotDay",
+    "DemandForecast",
     "FlowerType",
+    "HolidayFactor",
     "InventoryMovement",
     "MovementType",
     "Order",

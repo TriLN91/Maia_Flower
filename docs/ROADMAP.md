@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ██ ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░     8/14 ngày (~57%)
+       ██ ██ ██ ██ ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░     9/14 ngày (~64%)
 ```
 
 ---
@@ -306,7 +306,7 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 
 ---
 
-### 📈 Ngày 9 — Tính năng E: Dự báo nhu cầu + gợi ý nhập hàng
+### 📈 Ngày 9 — Tính năng E: Dự báo nhu cầu + gợi ý nhập hàng ✅
 
 **Bảng mới**: `holiday_factors`, `demand_forecasts`.
 
@@ -321,6 +321,15 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 **API**: `GET /admin/forecast?flower_type_id=&days=14`, `GET /admin/restock-suggestions?date=`, `GET/POST/PATCH /admin/holiday-factors`, `GET /admin/forecast/backtest`.
 
 **Test**: công thức với dữ liệu nhỏ biết trước đáp án, hệ số lễ áp đúng ngày, gợi ý nhập không âm, MAPE tính đúng.
+
+> **Ghi chú khi làm:**
+> - `holiday_factors` hỗ trợ cả ngày lặp hằng năm (`MM-DD`) lẫn khoảng ngày một lần (Tết, Ngày của Mẹ), chung hoặc riêng từng loại hoa (riêng thắng chung). Migration nạp sẵn 18 quy tắc 2025–2027.
+> - Nền được **khử mùa vụ** (chia hệ số lễ của từng ngày lịch sử) để một ngày 14/2 không làm phồng các thứ Bảy sau.
+> - Chỉ số chính là **WAPE** (Σ|sai| / Σ thực), kèm MAPE; so với 2 baseline trên cùng tập điểm. Kết quả: WAPE 40,4% vs 46,0% (TB 14 ngày) vs 58,3% (cùng thứ tuần trước).
+> - Đã thử biến thể "mức nền 28 ngày × chỉ số thứ 12 tuần": chỉ tốt hơn ~1,4 điểm → giữ v1 cho dễ giải thích; sai số còn lại chủ yếu là nhiễu Poisson của hoa bán ít.
+> - Gợi ý nhập: phủ `min(cover_days, số ngày tươi)` ngày, tồn còn dùng được tính theo phần hạn còn lại trong khoảng phủ, +15% an toàn, làm tròn theo bó 10; ước tính chi phí theo giá nhập gần nhất.
+> - Bộ máy giảm giá dùng dự báo đã lưu (chia đều theo phần ngày còn lại); chưa có dự báo thì quay về TB 14 ngày. Job dự báo 00:15 giờ VN.
+> - Lịch sử là nhu cầu *đã đáp ứng* (đơn mất vì hết hoa không được ghi) — ghi rõ trong code.
 
 ---
 

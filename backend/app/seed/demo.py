@@ -49,6 +49,7 @@ VN = ZoneInfo("Asia/Ho_Chi_Minh")
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 BUSINESS_TABLES = [
+    "demand_forecasts",
     "template_discount_log",
     "template_discounts",
     "urgency_scores",
@@ -391,7 +392,7 @@ async def _ensure_empty(session: AsyncSession, reset: bool) -> None:
 
 async def _fix_sequences(session: AsyncSession) -> None:
     for table in BUSINESS_TABLES:
-        if table in ("template_items", "template_discounts", "urgency_scores"):
+        if table in ("template_items", "template_discounts", "urgency_scores", "demand_forecasts"):
             continue
         await session.execute(
             text(

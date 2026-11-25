@@ -24,6 +24,10 @@ celery_app.conf.update(
             "task": "app.workers.tasks.expire_unpaid_orders",
             "schedule": 60.0,  # mỗi phút: đơn quá 15' chưa trả tiền sẽ được nhả trong ≤ 1'
         },
+        "recompute-forecasts": {
+            "task": "app.workers.tasks.recompute_forecasts",
+            "schedule": crontab(hour=17, minute=15),  # 00:15 giờ VN — trước job giá phút 5
+        },
         "recompute-pricing": {
             "task": "app.workers.tasks.recompute_pricing",
             "schedule": crontab(minute=5),  # mỗi giờ, phút thứ 5

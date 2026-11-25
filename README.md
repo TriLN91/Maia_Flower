@@ -43,6 +43,18 @@ Ngày của Mẹ, Tết…), lấy hoa FEFO, hoa hỏng theo chất lượng nh�
 Kết quả với `--seed 42` (12 tháng tới 24/11/2026): **7.346 đơn**, ngày đông nhất 14/2 (126 đơn),
 hao hụt **13,5%**, sổ kho khớp 100%. *Đây là dữ liệu mô phỏng, không phải số liệu thật.*
 
+### Độ chính xác dự báo (backtest trên dữ liệu mô phỏng)
+
+Rolling origin 56 ngày × dự báo 7 ngày tới × 15 loại hoa (5.880 điểm):
+
+| Phương pháp | WAPE |
+|---|---|
+| **Mô hình (thứ trong tuần × hệ số lễ)** | **40,4%** |
+| Trung bình 14 ngày | 46,0% |
+| Cùng thứ tuần trước | 58,3% |
+
+Hoa bán nhiều sai số thấp (baby trắng 25%, lá chanh 28%); hoa bán vài cành/ngày nhiễu cao (lan hồ điệp, cẩm tú cầu) — phần lớn sai số là nhiễu ngẫu nhiên không dự báo được. Dùng WAPE thay MAPE vì MAPE bùng nổ ở ngày chỉ bán 1–2 cành.
+
 ### Thử thanh toán
 
 1. Đặt đơn qua `POST /api/v1/shop/orders` → nhận `tracking_token`.
@@ -99,5 +111,6 @@ docker-compose.yml
 - [x] **Ngày 6:** thanh toán qua cổng giả lập ký HMAC-SHA512 kiểu VNPay, IPN idempotent, thanh toán về trễ, job Celery nhả đơn quá hạn, quy trình đơn (state machine) + nhật ký trạng thái
 - [x] **Ngày 7:** dữ liệu mô phỏng 12 tháng (tái lập bằng seed), job đêm đánh dấu lô quá hạn, API kiểm tra sổ kho, rate limit Redis (cửa sổ trượt, Lua nguyên tử)
 - [x] **Ngày 8:** bộ máy "Cần bán gấp" + giảm giá động tự động (trần, sàn biên lợi nhuận, giới hạn bước, khóa mẫu, công tắc tổng, nhật ký lý do), mục "Tươi nhất hôm nay"
-- [ ] Ngày 9: dự báo nhu cầu + gợi ý nhập hàng
+- [x] **Ngày 9:** dự báo nhu cầu (thứ trong tuần × hệ số lễ, khử mùa vụ), gợi ý nhập hàng, backtest cuộn — WAPE 40,4% so với 46,0% (TB 14 ngày) và 58,3% (cùng thứ tuần trước); bộ máy giảm giá dùng dự báo
+- [ ] Ngày 10–11: frontend cho khách
 - [ ] …
