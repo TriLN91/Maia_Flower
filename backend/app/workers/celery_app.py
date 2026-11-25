@@ -7,6 +7,7 @@ và chỉ chạy MỘT beat.)
 """
 
 from celery import Celery
+from celery.schedules import crontab
 
 from app.core.config import get_settings
 
@@ -22,6 +23,10 @@ celery_app.conf.update(
         "expire-unpaid-orders": {
             "task": "app.workers.tasks.expire_unpaid_orders",
             "schedule": 60.0,  # mỗi phút: đơn quá 15' chưa trả tiền sẽ được nhả trong ≤ 1'
+        },
+        "mark-expired-batches": {
+            "task": "app.workers.tasks.mark_expired_batches",
+            "schedule": crontab(hour=17, minute=30),  # 17:30 UTC = 00:30 giờ Việt Nam
         },
     },
 )

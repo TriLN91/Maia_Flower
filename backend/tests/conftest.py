@@ -13,6 +13,8 @@ os.environ["REDIS_URL"] = os.environ.get("TEST_REDIS_URL") or (
 )
 # Test mặc định chạy KHÔNG có Goong (Haversine); test nào cần thì tự bật bằng monkeypatch
 os.environ.pop("GOONG_API_KEY", None)
+# Tắt rate limit mặc định (test đồng thời bắn 50 request); test_rate_limit.py tự bật lại
+os.environ["RATE_LIMIT_ENABLED"] = "false"
 
 from collections.abc import AsyncIterator, Awaitable, Callable  # noqa: E402
 from pathlib import Path  # noqa: E402

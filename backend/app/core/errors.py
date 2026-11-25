@@ -23,6 +23,7 @@ class AppError(Exception):
         code: str | None = None,
         status_code: int | None = None,
         extra: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ):
         super().__init__(message)
         self.message = message
@@ -31,6 +32,7 @@ class AppError(Exception):
         if status_code is not None:
             self.status_code = status_code
         self.extra = extra or {}
+        self.headers = headers
 
 
 class NotFoundError(AppError):
@@ -43,10 +45,15 @@ class ConflictError(AppError):
     code = "CONFLICT"
 
 
+class RateLimitedError(AppError):
+    status_code = 429
+    code = "RATE_LIMITED"
+
+
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def _handle_app_error(_: Request, exc: AppError) -> JSONResponse:
         body: dict[str, Any] = {"detail": exc.message, "code": exc.code}
         if exc.extra:
             body["extra"] = exc.extra
-        return JSONResponse(status_code=exc.status_code, content=body)
+        return JSONResponse(status_code=exc.status_code, content=body, headers=exc.headers)

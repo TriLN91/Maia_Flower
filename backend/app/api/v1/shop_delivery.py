@@ -5,6 +5,7 @@ from fastapi import APIRouter, Path, Query
 from pydantic import BaseModel, Field
 
 from app.api.deps import SessionDep
+from app.core.rate_limit import limit_by_ip
 from app.schemas.orders import CartLineIn
 from app.services import checkout, maps
 from app.services.delivery_fee import compute_fee
@@ -50,7 +51,11 @@ class DeliveryQuoteOut(BaseModel):
     expires_at: datetime
 
 
-@router.get("/address/autocomplete", response_model=list[SuggestionOut])
+@router.get(
+    "/address/autocomplete",
+    response_model=list[SuggestionOut],
+    dependencies=[limit_by_ip("autocomplete", 30, 60)],
+)
 async def autocomplete(
     session: SessionDep, q: Annotated[str, Query(min_length=3, max_length=200)]
 ) -> list[maps.PlaceSuggestion]:
@@ -60,12 +65,20 @@ async def autocomplete(
     return await maps.search_address(q, (settings.shop_lat, settings.shop_lng))
 
 
-@router.get("/address/place/{place_id}", response_model=PlaceOut)
+@router.get(
+    "/address/place/{place_id}",
+    response_model=PlaceOut,
+    dependencies=[limit_by_ip("place", 30, 60)],
+)
 async def place(place_id: Annotated[str, Path(max_length=300)]) -> maps.Place:
     return await maps.get_place(place_id)
 
 
-@router.post("/delivery/quote", response_model=DeliveryQuoteOut)
+@router.post(
+    "/delivery/quote",
+    response_model=DeliveryQuoteOut,
+    dependencies=[limit_by_ip("delivery-quote", 20, 60)],
+)
 async def delivery_quote(session: SessionDep, body: DeliveryQuoteIn) -> DeliveryQuoteOut:
     """Đo quãng đường từ shop tới địa chỉ, tính phí và trả về token đã ký (dùng khi đặt hàng)."""
     settings = await get_delivery_settings(session)

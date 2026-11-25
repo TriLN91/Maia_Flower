@@ -154,7 +154,13 @@ async def quote_cart(
 # Tạo đơn
 # =====================================================================
 def fingerprint(data: OrderCreate) -> str:
-    return hashlib.sha256(data.model_dump_json().encode()).hexdigest()
+    """Dấu vân tay nội dung đơn để phát hiện dùng lại Idempotency-Key cho đơn KHÁC.
+
+    Bỏ `delivery_quote_token`: token được ký lại mỗi lần lấy báo giá (iat/exp đổi theo giây),
+    nên khách lấy lại báo giá rồi bấm đặt lần nữa vẫn là CÙNG một đơn.
+    """
+    payload = data.model_dump_json(exclude={"delivery_quote_token"})
+    return hashlib.sha256(payload.encode()).hexdigest()
 
 
 async def _replay(session: AsyncSession, key: str, fp: str) -> Order | None:

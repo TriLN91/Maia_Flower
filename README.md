@@ -32,6 +32,17 @@ docker compose exec api python -m app.cli create-owner --email owner@maiaflower.
 
 Sau đó bấm **Authorize** trong Swagger, nhập email vào ô `username`.
 
+### Dữ liệu demo
+
+```bash
+docker compose exec api python -m app.cli seed-demo --reset   # 365 ngày, --seed 42
+```
+
+Mô phỏng từng ngày: nhập lô theo lịch, đơn theo thứ trong tuần và ngày lễ (14/2, 8/3, 20/10, 20/11,
+Ngày của Mẹ, Tết…), lấy hoa FEFO, hoa hỏng theo chất lượng nhà cung cấp, lô hết hạn bị bỏ.
+Kết quả với `--seed 42` (12 tháng tới 24/11/2026): **7.346 đơn**, ngày đông nhất 14/2 (126 đơn),
+hao hụt **13,5%**, sổ kho khớp 100%. *Đây là dữ liệu mô phỏng, không phải số liệu thật.*
+
 ### Thử thanh toán
 
 1. Đặt đơn qua `POST /api/v1/shop/orders` → nhận `tracking_token`.
@@ -86,5 +97,6 @@ docker-compose.yml
 - [x] **Ngày 4:** checkout không cần đăng nhập — FEFO cho cả giỏ, giữ hoa + khung giờ 15 phút, idempotency, theo dõi đơn (test 50 request đồng thời: không bán vượt)
 - [x] **Ngày 5:** phí ship theo quãng đường (Goong + Haversine dự phòng, cache Redis), báo giá ship có chữ ký, cài đặt giao hàng, quản lý khung giờ + ghi đè theo ngày
 - [x] **Ngày 6:** thanh toán qua cổng giả lập ký HMAC-SHA512 kiểu VNPay, IPN idempotent, thanh toán về trễ, job Celery nhả đơn quá hạn, quy trình đơn (state machine) + nhật ký trạng thái
-- [ ] Ngày 7: dữ liệu giả lập 12 tháng, job đêm, rate limit
+- [x] **Ngày 7:** dữ liệu mô phỏng 12 tháng (tái lập bằng seed), job đêm đánh dấu lô quá hạn, API kiểm tra sổ kho, rate limit Redis (cửa sổ trượt, Lua nguyên tử)
+- [ ] Ngày 8: "Cần bán gấp" + giảm giá động tự động
 - [ ] …

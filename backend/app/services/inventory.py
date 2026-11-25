@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -354,3 +354,54 @@ async def inventory_summary(session: AsyncSession, now: datetime | None = None) 
                 if s.nearest_expiry_at is None or b.expected_expiry_at < s.nearest_expiry_at:
                     s.nearest_expiry_at = b.expected_expiry_at
     return list(stock.values())
+
+
+# =====================================================================
+# Job đêm & kiểm tra sổ kho
+# =====================================================================
+async def mark_expired_batches(session: AsyncSession, now: datetime | None = None) -> int:
+    """Lô đang bán đã quá hạn mà còn hoa -> NEEDS_REVIEW để chủ shop xác nhận bỏ hay gia hạn.
+
+    Việc bán hàng đã tự loại lô quá hạn theo thời gian thực (xem `sellable_filter`); job này
+    chỉ đưa chúng lên danh sách cần xử lý. Chạy lại nhiều lần vẫn cho cùng kết quả.
+    """
+    now = now or utcnow()
+    result = await session.execute(
+        update(Batch)
+        .where(
+            Batch.status == BatchStatus.ACTIVE,
+            Batch.expected_expiry_at <= now,
+            Batch.quantity_available > 0,
+        )
+        .values(status=BatchStatus.NEEDS_REVIEW)
+    )
+    await session.commit()
+    return result.rowcount or 0
+
+
+@dataclass
+class LedgerMismatch:
+    batch_id: int
+    quantity_available: int
+    ledger_sum: int
+
+
+async def ledger_audit(session: AsyncSession) -> tuple[int, list[LedgerMismatch]]:
+    """Kiểm tra bất biến: tồn của mỗi lô == tổng sổ kho của lô đó. Trả về (số lô, các lô lệch)."""
+    ledger = (
+        select(
+            InventoryMovement.batch_id,
+            func.sum(InventoryMovement.quantity).label("total"),
+        )
+        .group_by(InventoryMovement.batch_id)
+        .subquery()
+    )
+    rows = (
+        await session.execute(
+            select(Batch.id, Batch.quantity_available, func.coalesce(ledger.c.total, 0))
+            .outerjoin(ledger, ledger.c.batch_id == Batch.id)
+            .order_by(Batch.id)
+        )
+    ).all()
+    mismatches = [LedgerMismatch(bid, avail, total) for bid, avail, total in rows if avail != total]
+    return len(rows), mismatches

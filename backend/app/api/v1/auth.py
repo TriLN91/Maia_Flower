@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.deps import CurrentStaff, SessionDep
+from app.core.rate_limit import enforce, limit_by_ip
 from app.core.security import create_access_token
 from app.schemas.staff import ChangePasswordIn, StaffOut, TokenOut
 from app.services import staff as staff_service
@@ -11,12 +12,14 @@ from app.services import staff as staff_service
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/login", response_model=TokenOut)
+@router.post("/login", response_model=TokenOut, dependencies=[limit_by_ip("login", 5, 60)])
 async def login(
     session: SessionDep, form: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> TokenOut:
     """Đăng nhập cho thợ bó / chủ shop. `username` là email (chuẩn OAuth2 để nút Authorize
     của Swagger dùng được)."""
+    # Thêm giới hạn theo email: chặn dò mật khẩu một tài khoản từ nhiều IP khác nhau
+    await enforce(f"login:email:{form.username.strip().lower()}", 10, 15 * 60)
     user = await staff_service.authenticate(session, form.username, form.password)
     if user is None:
         raise HTTPException(

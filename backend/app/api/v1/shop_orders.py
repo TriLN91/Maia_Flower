@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Header, Query, Response, status
 
 from app.api.deps import SessionDep
+from app.core.rate_limit import enforce, limit_by_ip
 from app.models import Order
 from app.schemas.orders import (
     CartQuoteIn,
@@ -24,7 +25,9 @@ def public_order(order: Order, *, with_token: bool = False) -> OrderPublicOut:
     return schema.model_validate(order)
 
 
-@router.post("/cart/quote", response_model=CartQuoteOut)
+@router.post(
+    "/cart/quote", response_model=CartQuoteOut, dependencies=[limit_by_ip("cart-quote", 60, 60)]
+)
 async def quote_cart(session: SessionDep, body: CartQuoteIn) -> CartQuoteOut:
     """Tính lại giỏ hàng từ dữ liệu server (giá, còn hàng, phí ship nếu có quote token).
     Không giữ hoa."""
@@ -59,6 +62,7 @@ async def delivery_slot_availability(
 
 @router.post(
     "/orders",
+    dependencies=[limit_by_ip("order-create", 20, 60)],
     response_model=OrderCreatedOut,
     status_code=status.HTTP_201_CREATED,
     responses={
@@ -82,6 +86,8 @@ async def create_order(
     ],
 ) -> OrderPublicOut:
     """Tạo đơn: giữ hoa (FEFO) và giữ khung giờ trong 15 phút chờ thanh toán."""
+    # Chống đơn ảo giữ hết hoa: mỗi số điện thoại tối đa 5 lần đặt / 10 phút
+    await enforce(f"order-create:phone:{body.customer_phone}", 5, 10 * 60)
     order, replayed = await checkout.create_order(session, body, idempotency_key, utcnow())
     if replayed:
         response.status_code = status.HTTP_200_OK
@@ -89,6 +95,10 @@ async def create_order(
     return public_order(order, with_token=True)
 
 
-@router.get("/orders/track/{token}", response_model=OrderPublicOut)
+@router.get(
+    "/orders/track/{token}",
+    response_model=OrderPublicOut,
+    dependencies=[limit_by_ip("order-track", 30, 60)],
+)
 async def track_order(session: SessionDep, token: str) -> OrderPublicOut:
     return public_order(await checkout.get_order_by_token(session, token))

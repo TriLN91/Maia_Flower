@@ -283,6 +283,18 @@ async def test_same_idempotency_key_returns_same_order(shop, place_order):
     assert await batch_available(batch) == 8  # chỉ trừ một lần
 
 
+async def test_refreshed_quote_token_is_still_the_same_order(shop, place_order):
+    """Khách lấy lại báo giá ship (token mới) rồi bấm đặt lại: vẫn là cùng một đơn."""
+    await shop["add_batch"]("rose", 10)
+    first = await place_order(
+        [(shop["red"], 1)], key="order-key-789", delivery_quote_token=quote_token()
+    )
+    later = quote_token(now=datetime.now(UTC) + timedelta(seconds=5))  # iat/exp khác
+    second = await place_order([(shop["red"], 1)], key="order-key-789", delivery_quote_token=later)
+    assert second.status_code == 200
+    assert second.json()["code"] == first.json()["code"]
+
+
 async def test_same_key_with_different_body_is_rejected(shop, place_order):
     await shop["add_batch"]("rose", 10)
     await place_order([(shop["red"], 1)], key="order-key-456")

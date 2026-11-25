@@ -28,6 +28,12 @@ class Settings(BaseSettings):
 
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
+    # Giới hạn tần suất (Redis). Tắt được khi chạy test tải nội bộ.
+    rate_limit_enabled: bool = True
+    # Chỉ bật khi API đứng sau reverse proxy tin cậy (Render/Nginx): lấy IP thật từ
+    # X-Forwarded-For. Bật khi KHÔNG có proxy = cho phép khách tự giả IP để lách giới hạn.
+    trust_proxy_headers: bool = False
+
     # --- Đặt hàng & giao hàng ---
     shop_timezone: str = "Asia/Ho_Chi_Minh"
     # Phải đặt trước giờ bắt đầu khung giao ít nhất bấy nhiêu phút (để kịp bó hoa)

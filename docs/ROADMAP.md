@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     6/14 ngày (~43%)
+       ██ ██ ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░     7/14 ngày (~50%)
 ```
 
 ---
@@ -255,7 +255,7 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 
 ---
 
-### 🧪 Ngày 7 — Dữ liệu giả lập 12 tháng, job đêm, rate limit, dự phòng
+### 🧪 Ngày 7 — Dữ liệu giả lập 12 tháng, job đêm, rate limit, dự phòng ✅
 
 - **Script `scripts/seed_history.py`**: tạo ~15 loại hoa, 4 nhà cung cấp, ~12 mẫu bó, 5 khung giờ; mô phỏng 365 ngày nhập lô + đơn hàng với:
   - Cuối tuần × 1,4; ngày lễ × 3–8 (14/2 hồng đỏ cao nhất); mùa tốt nghiệp tháng 5–6.
@@ -266,6 +266,12 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 - Thời gian còn lại: sửa lỗi, bổ sung test, dọn code tuần 1.
 
 **Mốc cuối tuần 1**: toàn bộ luồng *nhập lô → khách đặt → thanh toán mock → thợ bó → hoàn thành* chạy được qua Swagger.
+
+> **Ghi chú khi làm:**
+> - Seed là lệnh `python -m app.cli seed-demo [--reset] [--days] [--end-date] [--seed]`, ghi thẳng bằng Core insert (365 ngày ≈ 15 giây), tự đặt lại sequence; từ chối chạy ở production và khi bảng đã có dữ liệu mà không có `--reset`. Dịp đông, chủ shop được coi như đã tăng sức chứa khung giờ.
+> - Thêm `GET /admin/inventory/audit` kiểm tra bất biến tồn = tổng sổ kho trên mọi lô.
+> - Rate limit dùng **cửa sổ trượt** (sorted set + script Lua nguyên tử), trả 429 + `Retry-After`; Redis lỗi thì cho qua (fail-open). Chỉ đọc `X-Forwarded-For` khi bật `TRUST_PROXY_HEADERS`. Giới hạn: đăng nhập 5/phút/IP + 10/15 phút/email; tạo đơn 20/phút/IP + 5/10 phút/SĐT; theo dõi đơn 30/phút; thanh toán 10/phút; gợi ý địa chỉ/địa điểm 30/phút; báo giá ship 20/phút; báo giá giỏ 60/phút.
+> - **Sửa lỗi phát hiện khi chạy test lặp:** dấu vân tay idempotency có chứa token báo giá ship (ký lại mỗi giây) → khách lấy lại báo giá rồi đặt lại bị 422. Nay bỏ token khỏi dấu vân tay.
 
 ---
 

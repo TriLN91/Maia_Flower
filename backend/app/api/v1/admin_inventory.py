@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from datetime import datetime
 
 from fastapi import APIRouter, status
+from pydantic import BaseModel
 
 from app.api.deps import CurrentOwner, CurrentStaff, SessionDep
 from app.models import Batch, BatchStatus, InventoryMovement
@@ -128,6 +129,21 @@ async def inventory_summary(session: SessionDep, _: CurrentStaff) -> list[Flower
         )
         for s in rows
     ]
+
+
+class LedgerAuditOut(BaseModel):
+    batches_checked: int
+    ok: bool
+    mismatches: list[dict]
+
+
+@router.get("/inventory/audit", response_model=LedgerAuditOut, tags=["admin: inventory"])
+async def ledger_audit(session: SessionDep, _: CurrentOwner) -> LedgerAuditOut:
+    """Kiểm tra bất biến tồn kho = tổng sổ kho trên mọi lô (dùng sau khi seed / sự cố)."""
+    checked, mismatches = await inventory.ledger_audit(session)
+    return LedgerAuditOut(
+        batches_checked=checked, ok=not mismatches, mismatches=[m.__dict__ for m in mismatches]
+    )
 
 
 @router.get(

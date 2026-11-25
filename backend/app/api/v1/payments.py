@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from app.api.deps import SessionDep
+from app.core.rate_limit import limit_by_ip
 from app.models import OrderStatus, PaymentStatus
 from app.services.inventory import utcnow
 from app.services.payments import service
@@ -31,7 +32,12 @@ class ReturnOut(BaseModel):
     message: str
 
 
-@router.post("/shop/orders/track/{token}/pay", response_model=PayOut, tags=["shop: checkout"])
+@router.post(
+    "/shop/orders/track/{token}/pay",
+    response_model=PayOut,
+    tags=["shop: checkout"],
+    dependencies=[limit_by_ip("pay-start", 10, 60)],
+)
 async def start_payment(session: SessionDep, token: str) -> PayOut:
     """Tạo giao dịch và trả về URL cổng thanh toán. Cần tracking token (chỉ người đặt có)."""
     start = await service.start_payment(session, token, utcnow())
