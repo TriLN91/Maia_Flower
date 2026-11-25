@@ -4,7 +4,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
-from app.models.orders import OrderStatus
+from app.models.orders import OrderStatus, PaymentStatus
 from app.schemas.common import Name
 
 
@@ -112,6 +112,33 @@ class OrderLineOut(BaseModel):
     line_total: int
 
 
+class TimelineEntry(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    to_status: OrderStatus
+    created_at: datetime
+
+
+class EventOut(TimelineEntry):
+    from_status: OrderStatus | None
+    actor: str
+    actor_id: int | None
+    note: str | None
+
+
+class PaymentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    txn_ref: str
+    provider: str
+    amount: int
+    status: PaymentStatus
+    response_code: str | None
+    needs_refund: bool
+    paid_at: datetime | None
+    created_at: datetime
+
+
 class OrderPublicOut(BaseModel):
     """Khách xem đơn của mình. Không lộ lô hàng, giá vốn; số điện thoại bị che bớt."""
 
@@ -133,6 +160,7 @@ class OrderPublicOut(BaseModel):
     total: int
     hold_expires_at: datetime | None
     created_at: datetime
+    timeline: list[TimelineEntry] = Field(validation_alias="events")
 
 
 class OrderCreatedOut(OrderPublicOut):
@@ -176,3 +204,24 @@ class OrderAdminOut(BaseModel):
     total: int
     hold_expires_at: datetime | None
     created_at: datetime
+    events: list[EventOut]
+    payments: list[PaymentOut]
+
+
+class OrderSummaryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    code: str
+    status: OrderStatus
+    customer_name: str
+    delivery_starts_at: datetime
+    delivery_ends_at: datetime
+    total: int
+    item_count: int
+    created_at: datetime
+
+
+class TransitionIn(BaseModel):
+    to_status: OrderStatus
+    note: Annotated[str, Field(max_length=500)] | None = None

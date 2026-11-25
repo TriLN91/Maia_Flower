@@ -32,6 +32,10 @@ def create_app() -> FastAPI:
     )
     register_error_handlers(app)
     app.include_router(api_router)
+    if settings.payment_provider == "mock" and settings.app_env != "production":
+        from app.api.mock_gateway import router as mock_gateway_router
+
+        app.include_router(mock_gateway_router)
     return app
 
 

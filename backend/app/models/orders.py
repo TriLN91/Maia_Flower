@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     DateTime,
     Float,
@@ -11,7 +12,9 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -28,6 +31,9 @@ class OrderStatus(enum.StrEnum):
     COMPLETED = "completed"
     CANCELLED = "cancelled"
     EXPIRED = "expired"  # quá hạn giữ chỗ mà chưa thanh toán
+    # Đã nhận tiền nhưng không giao được (vd. thanh toán về trễ khi hoa đã bán cho người khác,
+    # hoặc chủ shop hủy đơn đã trả tiền) -> chủ shop hoàn tiền thủ công rồi chuyển CANCELLED
+    NEEDS_REFUND = "needs_refund"
 
 
 class Order(TimestampMixin, Base):
@@ -79,6 +85,8 @@ class Order(TimestampMixin, Base):
         back_populates="order", cascade="all, delete-orphan", order_by="OrderItem.id"
     )
     slot_day: Mapped[DeliverySlotDay] = relationship(lazy="joined")
+    events: Mapped[list["OrderEvent"]] = relationship(order_by="OrderEvent.id", viewonly=True)
+    payments: Mapped[list["Payment"]] = relationship(order_by="Payment.id", viewonly=True)
 
     @property
     def customer_phone_masked(self) -> str:
@@ -130,3 +138,50 @@ class OrderAllocation(Base):
 
     order_item: Mapped[OrderItem] = relationship(back_populates="allocations")
     batch: Mapped[Batch] = relationship(lazy="joined")
+
+
+class OrderEvent(Base):
+    """Nhật ký chuyển trạng thái đơn (ai, lúc nào, vì sao) — dùng cho audit và timeline khách."""
+
+    __tablename__ = "order_events"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    from_status: Mapped[OrderStatus | None] = mapped_column(
+        _str_enum(OrderStatus, "order_event_from_status")
+    )
+    to_status: Mapped[OrderStatus] = mapped_column(_str_enum(OrderStatus, "order_event_to_status"))
+    actor: Mapped[str] = mapped_column(String(20))  # customer | staff | payment | system
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("staff_users.id", ondelete="SET NULL"))
+    note: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PaymentStatus(enum.StrEnum):
+    PENDING = "pending"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class Payment(TimestampMixin, Base):
+    """Một lần khách bấm thanh toán (một đơn có thể có nhiều lần thử)."""
+
+    __tablename__ = "payments"
+    __table_args__ = (CheckConstraint("amount > 0", name="amount_positive"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="RESTRICT"), index=True)
+    provider: Mapped[str] = mapped_column(String(20))  # mock | vnpay
+    # Mã giao dịch phía shop gửi sang cổng (vnp_TxnRef) — khóa idempotency của IPN
+    txn_ref: Mapped[str] = mapped_column(String(40), unique=True)
+    amount: Mapped[int] = mapped_column(BigInteger)
+    status: Mapped[PaymentStatus] = mapped_column(
+        _str_enum(PaymentStatus, "payment_status"), default=PaymentStatus.PENDING
+    )
+    gateway_txn_no: Mapped[str | None] = mapped_column(String(40))
+    response_code: Mapped[str | None] = mapped_column(String(10))
+    # Tiền đã vào nhưng đơn không giao được / bị trả trùng -> cần hoàn
+    needs_refund: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    raw_callback: Mapped[dict | None] = mapped_column(JSONB)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -39,6 +39,16 @@ class Settings(BaseSettings):
     # Báo giá ship có hiệu lực trong bấy nhiêu phút
     delivery_quote_minutes: int = Field(default=15, ge=1, le=120)
 
+    # --- Thanh toán ---
+    # "mock" = cổng giả lập trong app (ký HMAC-SHA512 y như VNPay). Sau này thêm "vnpay".
+    payment_provider: Literal["mock"] = "mock"
+    # Khóa ký giữa shop và cổng thanh toán (giả lập vnp_HashSecret). Production phải đặt riêng.
+    mock_pay_secret: str = Field(
+        default="dev-only-mock-gateway-secret-change-me-0000", min_length=32
+    )
+    # URL công khai của API (cổng thanh toán redirect/IPN về đây)
+    public_base_url: str = "http://localhost:8000"
+
     # --- Bản đồ (Goong). Không có key -> tính đường chim bay × hệ số đường vòng ---
     goong_api_key: str | None = None
     goong_base_url: str = "https://rsapi.goong.io"

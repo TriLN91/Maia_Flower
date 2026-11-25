@@ -2,12 +2,12 @@
 
 import hashlib
 import secrets
-from collections import defaultdict, deque
+from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -16,12 +16,8 @@ from app.core.config import get_settings
 from app.core.errors import AppError, ConflictError, NotFoundError
 from app.models import (
     Batch,
-    BatchStatus,
     BouquetTemplate,
-    FlowerType,
-    MovementType,
     Order,
-    OrderAllocation,
     OrderItem,
     OrderStatus,
 )
@@ -29,7 +25,8 @@ from app.schemas.orders import CartLineIn, CartQuoteOut, OrderCreate, QuoteLineO
 from app.services.delivery_fee import compute_fee
 from app.services.delivery_quote import verify_quote
 from app.services.delivery_slots import reserve_slot, shop_tz, slot_window
-from app.services.inventory import apply_movement
+from app.services.order_workflow import record_event
+from app.services.reservations import Need, allocate_and_reserve, sellable_filter
 from app.services.shop_settings import get_delivery_settings
 
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # bỏ 0/O, 1/I dễ nhầm khi đọc qua điện thoại
@@ -94,17 +91,6 @@ def _flower_demand(priced: Sequence[PricedLine]) -> dict[int, int]:
     return dict(demand)
 
 
-def _sellable_filter(deliver_by: datetime):
-    """Lô bán được cho đơn giao trước `deliver_by`: đang hoạt động, còn hàng, chưa bị đánh
-    giá héo hẳn, và còn hạn tới lúc giao xong."""
-    return (
-        Batch.status == BatchStatus.ACTIVE,
-        Batch.quantity_available > 0,
-        Batch.expected_expiry_at > deliver_by,
-        or_(Batch.freshness_override.is_(None), Batch.freshness_override > 0),
-    )
-
-
 # =====================================================================
 # Báo giá (không giữ gì)
 # =====================================================================
@@ -124,7 +110,7 @@ async def quote_cart(
         (
             await session.execute(
                 select(Batch.flower_type_id, func.sum(Batch.quantity_available))
-                .where(Batch.flower_type_id.in_(demand), *_sellable_filter(now))
+                .where(Batch.flower_type_id.in_(demand), *sellable_filter(now))
                 .group_by(Batch.flower_type_id)
             )
         ).all()
@@ -194,56 +180,6 @@ async def _new_code(session: AsyncSession, now: datetime) -> str:
     raise ConflictError("Could not allocate an order code, please retry", code="RETRY")
 
 
-async def _lock_batches(
-    session: AsyncSession, flower_ids: Sequence[int], deliver_by: datetime
-) -> dict[int, list[Batch]]:
-    """Khóa mọi lô bán được của các loại hoa cần dùng, theo thứ tự cố định
-    (loại hoa, hạn dùng, id). Mọi giao dịch khóa theo cùng thứ tự -> không deadlock;
-    thứ tự hạn dùng tăng dần cũng chính là thứ tự FEFO."""
-    batches = (
-        await session.scalars(
-            select(Batch)
-            .where(Batch.flower_type_id.in_(flower_ids), *_sellable_filter(deliver_by))
-            .order_by(Batch.flower_type_id, Batch.expected_expiry_at, Batch.id)
-            .with_for_update(of=Batch)
-            .execution_options(populate_existing=True)
-        )
-    ).all()
-    grouped: dict[int, list[Batch]] = defaultdict(list)
-    for b in batches:
-        grouped[b.flower_type_id].append(b)
-    return grouped
-
-
-async def _raise_shortage(
-    session: AsyncSession, demand: dict[int, int], grouped: dict[int, list[Batch]]
-) -> None:
-    shortages = {
-        fid: (need, sum(b.quantity_available for b in grouped.get(fid, [])))
-        for fid, need in demand.items()
-    }
-    shortages = {fid: v for fid, v in shortages.items() if v[1] < v[0]}
-    if not shortages:
-        return
-    names = dict(
-        (
-            await session.execute(
-                select(FlowerType.id, FlowerType.name).where(FlowerType.id.in_(shortages))
-            )
-        ).all()
-    )
-    raise ConflictError(
-        "Not enough fresh flowers for this order",
-        code="OUT_OF_STOCK",
-        extra={
-            "shortages": [
-                {"flower_type_id": fid, "name": names.get(fid), "needed": need, "available": have}
-                for fid, (need, have) in sorted(shortages.items())
-            ]
-        },
-    )
-
-
 async def create_order(
     session: AsyncSession, data: OrderCreate, idempotency_key: str, now: datetime
 ) -> tuple[Order, bool]:
@@ -257,7 +193,6 @@ async def create_order(
     quote = verify_quote(data.delivery_quote_token)
     templates = await _load_templates(session, data.items)
     priced = _price(data.items, templates)
-    demand = _flower_demand(priced)
     subtotal = sum(p.unit_price * p.quantity for p in priced)
     discount = sum(p.discount_amount for p in priced)
     fee = compute_fee(
@@ -267,12 +202,9 @@ async def create_order(
         subtotal=subtotal - discount,
     ).total
 
-    # 1) Khung giờ trước (khóa 1 dòng), 2) rồi tới các lô — cùng thứ tự ở mọi giao dịch
+    # Khung giờ khóa trước, các lô khóa sau — cùng thứ tự ở mọi giao dịch (xem reservations.py)
     slot_day = await reserve_slot(session, data.slot_id, data.delivery_date, now)
     starts_at, ends_at = slot_window(slot_day.slot, data.delivery_date)
-
-    grouped = await _lock_batches(session, sorted(demand), ends_at)
-    await _raise_shortage(session, demand, grouped)
 
     order = Order(
         code=await _new_code(session, now),
@@ -316,44 +248,18 @@ async def create_order(
         session.add(order)
         await session.flush()  # cần id của đơn và các dòng
 
-        # Phân bổ FEFO: mỗi loại hoa là một hàng đợi lô theo hạn dùng tăng dần
-        queues = {fid: deque(batches) for fid, batches in grouped.items()}
-        remaining = {b.id: b.quantity_available for bs in grouped.values() for b in bs}
-        taken: dict[int, int] = defaultdict(int)  # batch_id -> tổng cành lấy
-        batch_by_id = {b.id: b for bs in grouped.values() for b in bs}
-
-        for order_item, line in zip(order.items, priced, strict=True):
-            for recipe in line.template.items:
-                need = recipe.quantity * line.quantity
-                queue = queues[recipe.flower_type_id]
-                while need:
-                    batch = queue[0]
-                    take = min(need, remaining[batch.id])
-                    # add trực tiếp (không qua order_item.allocations): sau flush, đụng vào quan hệ
-                    # sẽ kích hoạt lazy-load — không được phép với async.
-                    session.add(
-                        OrderAllocation(
-                            order_item_id=order_item.id,
-                            batch_id=batch.id,
-                            flower_type_id=recipe.flower_type_id,
-                            quantity=take,
-                        )
-                    )
-                    remaining[batch.id] -= take
-                    taken[batch.id] += take
-                    need -= take
-                    if remaining[batch.id] == 0:
-                        queue.popleft()
-
-        for batch_id, qty in sorted(taken.items()):
-            await apply_movement(
-                session,
-                batch_by_id[batch_id],
-                MovementType.RESERVE,
-                -qty,
-                reason=f"Order {order.code}",
-                order_id=order.id,
-            )
+        await allocate_and_reserve(
+            session,
+            order_id=order.id,
+            order_code=order.code,
+            needs=[
+                Need(order_item.id, recipe.flower_type_id, recipe.quantity * line.quantity)
+                for order_item, line in zip(order.items, priced, strict=True)
+                for recipe in line.template.items
+            ],
+            deliver_by=ends_at,
+        )
+        record_event(session, order, OrderStatus.PENDING_PAYMENT, actor="customer")
         await session.commit()
     except IntegrityError:
         await session.rollback()
@@ -369,7 +275,11 @@ async def create_order(
 def _order_query():
     return (
         select(Order)
-        .options(selectinload(Order.items).selectinload(OrderItem.allocations))
+        .options(
+            selectinload(Order.items).selectinload(OrderItem.allocations),
+            selectinload(Order.events),
+            selectinload(Order.payments),
+        )
         .execution_options(populate_existing=True)
     )
 

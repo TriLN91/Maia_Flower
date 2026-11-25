@@ -55,5 +55,28 @@ services:
       redis:
         condition: service_healthy
 
+  # Job nền (nhả đơn quá hạn mỗi phút, IPN trễ của cổng giả lập).
+  # Dev chạy worker + beat chung một container; production nên tách và chỉ chạy MỘT beat.
+  worker:
+    build:
+      context: ./backend
+      args:
+        INSTALL_DEV: "1"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-maia}:${POSTGRES_PASSWORD:-maia_dev_password}@postgres:5432/${POSTGRES_DB:-maia_flower}
+      REDIS_URL: redis://redis:6379/0
+    command: celery -A app.workers.celery_app worker --beat --loglevel=info --concurrency=2 --schedule=/tmp/celerybeat-schedule
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   pgdata:

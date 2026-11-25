@@ -18,7 +18,7 @@ Yêu cầu: Docker Desktop.
 
 ```bash
 cp .env.example .env          # rồi đặt JWT_SECRET ngẫu nhiên
-docker compose up -d --build  # Postgres + Redis + API (tự chạy migration)
+docker compose up -d --build  # Postgres + Redis + API (tự chạy migration) + Celery worker
 ```
 
 - API docs (Swagger): http://localhost:8000/docs
@@ -31,6 +31,13 @@ docker compose exec api python -m app.cli create-owner --email owner@maiaflower.
 ```
 
 Sau đó bấm **Authorize** trong Swagger, nhập email vào ô `username`.
+
+### Thử thanh toán
+
+1. Đặt đơn qua `POST /api/v1/shop/orders` → nhận `tracking_token`.
+2. `POST /api/v1/shop/orders/track/{token}/pay` → mở `payment_url` trong trình duyệt.
+3. Trang **cổng thanh toán giả lập** có các nút: thành công, thất bại, khách hủy, IPN đến trễ 2 phút,
+   IPN gửi 2 lần — để thử mọi tình huống mà cổng thật có thể gây ra.
 
 ## Phát triển
 
@@ -78,5 +85,6 @@ docker-compose.yml
 - [x] **Ngày 3:** nhập lô, sổ kho bất biến, độ tươi, hao hụt/kiểm kê, tồn kho tổng hợp, giá vốn mẫu + cảnh báo biên lợi nhuận (có test đồng thời)
 - [x] **Ngày 4:** checkout không cần đăng nhập — FEFO cho cả giỏ, giữ hoa + khung giờ 15 phút, idempotency, theo dõi đơn (test 50 request đồng thời: không bán vượt)
 - [x] **Ngày 5:** phí ship theo quãng đường (Goong + Haversine dự phòng, cache Redis), báo giá ship có chữ ký, cài đặt giao hàng, quản lý khung giờ + ghi đè theo ngày
-- [ ] Ngày 6: thanh toán mock, job nền Celery, quy trình đơn
+- [x] **Ngày 6:** thanh toán qua cổng giả lập ký HMAC-SHA512 kiểu VNPay, IPN idempotent, thanh toán về trễ, job Celery nhả đơn quá hạn, quy trình đơn (state machine) + nhật ký trạng thái
+- [ ] Ngày 7: dữ liệu giả lập 12 tháng, job đêm, rate limit
 - [ ] …

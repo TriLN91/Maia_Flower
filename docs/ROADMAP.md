@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     5/14 ngày (~36%)
+       ██ ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░     6/14 ngày (~43%)
 ```
 
 ---
@@ -221,7 +221,7 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 
 ---
 
-### 💳 Ngày 6 — Thanh toán mock + job nền Celery + quy trình đơn
+### 💳 Ngày 6 — Thanh toán mock + job nền Celery + quy trình đơn ✅
 
 **Thành phần**
 - `PaymentProvider` (interface) → `MockProvider`.
@@ -243,6 +243,15 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 | POST | `/admin/orders/{id}/transition` |
 
 **Test**: chữ ký sai bị từ chối, sai số tiền, IPN trùng chỉ cộng 1 lần, IPN trễ, hết hạn giữ → nhả đúng lô, chuyển trạng thái không hợp lệ bị chặn.
+
+> **Ghi chú khi làm:**
+> - Tách `services/reservations.py` (giữ/nhả hàng) dùng chung cho checkout, job nhả đơn, hủy đơn, thanh toán về trễ. Thứ tự khóa thống nhất: *payment → order → slot_day → batches*.
+> - IPN là GET và trả `{"RspCode","Message"}` theo quy ước VNPay (00/01/02/04/97/99). **Chỉ IPN đổi trạng thái đơn**; return URL chỉ hiển thị.
+> - Thanh toán về trễ: chỉ "hồi sinh" đơn `EXPIRED` (giữ lại hoa + khung giờ trong SAVEPOINT); không được thì `NEEDS_REFUND`. Đơn chủ shop đã hủy không bị hồi sinh — khoản tiền được đánh dấu `needs_refund`.
+> - Thêm trạng thái `needs_refund` (hủy đơn đã trả tiền / tiền về trễ) và bảng `order_events` (audit + timeline cho khách).
+> - Endpoint thanh toán là `POST /shop/orders/track/{token}/pay` (cần tracking token, vì khách không đăng nhập). Cổng giả lập ở `/mock-gateway` (ngoài `/api/v1`), tắt khi `APP_ENV=production`.
+> - Job nhả đơn dùng `SKIP LOCKED`, mỗi đơn một transaction; có test IPN và job chạy đua trên cùng đơn.
+> - Dev chạy Celery `worker --beat` trong một container; production phải tách và chỉ chạy một beat.
 
 ---
 

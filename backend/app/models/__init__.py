@@ -9,7 +9,15 @@ from app.models.catalog import (
 )
 from app.models.delivery import DeliverySlot, DeliverySlotDay
 from app.models.inventory import Batch, BatchStatus, InventoryMovement, MovementType
-from app.models.orders import Order, OrderAllocation, OrderItem, OrderStatus
+from app.models.orders import (
+    Order,
+    OrderAllocation,
+    OrderEvent,
+    OrderItem,
+    OrderStatus,
+    Payment,
+    PaymentStatus,
+)
 from app.models.settings import ShopSetting
 from app.models.staff_user import StaffRole, StaffUser
 
@@ -25,8 +33,11 @@ __all__ = [
     "MovementType",
     "Order",
     "OrderAllocation",
+    "OrderEvent",
     "OrderItem",
     "OrderStatus",
+    "Payment",
+    "PaymentStatus",
     "ShopSetting",
     "StaffRole",
     "StaffUser",
