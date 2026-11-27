@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ░░ ░░     12/14 ngày (~86%)
+       ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ░░     13/14 ngày (~93%)
 ```
 
 ---
@@ -383,7 +383,7 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 
 ---
 
-### 🚀 Ngày 13 — Deploy & tài liệu (đã chuẩn bị xong, chờ tạo dịch vụ Render)
+### 🚀 Ngày 13 — Deploy & tài liệu ✅ — https://maia-flower.onrender.com
 
 - Chọn nền tảng (đề xuất **Render** hoặc **Railway**: có Postgres + Redis + worker). **Bạn cần tạo tài khoản** trước ngày này.
 - Dockerfile production (không cài dev deps), biến môi trường production, `APP_ENV=production` tắt `/docs` công khai hoặc giữ cho nhà tuyển dụng xem (quyết định khi tới).
@@ -399,7 +399,8 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 > - **Lỗi phát hiện khi chạy thử image production:** lệnh `seed-demo` không làm gì mà vẫn exit 0 (script sửa file làm mất `asyncio.run`, lời gọi nằm sau `sys.exit`). Đã sửa + thêm test chạy CLI bằng tiến trình thật.
 > - **Lỗi thứ hai:** mục "Tươi nhất hôm nay" vẫn hiện mẫu có hoa dư dưới ngưỡng tối thiểu (không được giảm) kèm chữ "đang ưu đãi" → nay chỉ lấy hoa đang thực sự giảm giá.
 > - CI thêm job `docker`: build image production, kiểm tra có bản build web và từ chối khởi động khi thiếu secret.
-> - **Lần deploy đầu thất bại:** `render.yaml` chỉ đặt `region: singapore` cho web → Postgres/Key Value mặc định ở Oregon → địa chỉ nội bộ không phân giải được (`gaierror`). Sửa: cùng region cho cả 3 + lệnh `wait-db` chờ DB tối đa 90 giây và in lý do dễ hiểu (có test giả lập đúng lỗi này).
+> - **Đã kiểm tra trên bản thật:** health (API/DB/Redis), web + mọi đường dẫn SPA, đặt hàng trên khổ điện thoại → cổng giả lập → chọn "IPN đến trễ 2 phút" → đơn tự chuyển `paid` sau ~100 giây (chứng minh Celery chạy chung container hoạt động) → trang kết quả tự cập nhật; admin trả 401 khi sai mật khẩu / thiếu token.
+> - **Lần deploy đầu thất bại:** `render.yaml` chỉ đặt `region: singapore` cho web → Postgres/Key Value mặc định ở Oregon → địa chỉ nội bộ không phân giải được (`gaierror`). Sửa: cùng region cho cả 3 + lệnh `wait-db` chờ DB tối đa 90 giây và in lý do dễ hiểu (có test giả lập đúng lỗi này). Lần thứ hai vẫn lỗi vì Blueprint mới **dùng lại database cũ** cùng tên (region không đổi được) → phải xóa hẳn cả 3 tài nguyên rồi tạo lại.
 
 ---
 
