@@ -300,3 +300,9 @@ async def test_tiny_surplus_does_not_trigger_discount(client, owner_headers, set
     await setup["add_batch"](setup["rose"], 1, days_ago=6.3)  # 5 cành -> đủ ngưỡng
     await run_recompute(client, owner_headers)
     assert (await shop_prices(client))["Toàn Hồng"] == (10, 360_000)
+
+
+async def test_fresh_today_ignores_surplus_below_threshold(client, owner_headers, setup):
+    await setup["add_batch"](setup["rose"], 3, days_ago=6.3)  # dư 3 < 5: không giảm
+    await run_recompute(client, owner_headers)
+    assert (await client.get("/api/v1/shop/templates/fresh-today")).json() == []

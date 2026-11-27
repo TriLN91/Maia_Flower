@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 from app.core.config import get_settings
+from app.services.demo import auto_restock
 from app.services.forecasting import recompute_forecasts
 from app.services.inventory import mark_expired_batches, utcnow
 from app.services.order_workflow import expire_overdue_orders
@@ -57,3 +58,11 @@ def recompute_pricing() -> int:
 @celery_app.task(name="app.workers.tasks.recompute_forecasts")
 def recompute_forecasts_task() -> int:
     return run_in_session(lambda s: recompute_forecasts(s, utcnow()))
+
+
+@celery_app.task(name="app.workers.tasks.demo_auto_restock")
+def demo_auto_restock() -> int:
+    """Chỉ chạy khi DEMO_MODE=true: giữ bản demo luôn có hoa."""
+    if not get_settings().demo_mode:
+        return 0
+    return run_in_session(lambda s: auto_restock(s, utcnow()))

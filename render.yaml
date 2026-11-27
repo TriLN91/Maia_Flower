@@ -1,0 +1,59 @@
+# Render Blueprint — tạo toàn bộ hạ tầng từ repo: Dashboard > New > Blueprint > chọn repo này.
+# Gói miễn phí: 1 web service (API + web + Celery) + Postgres + Key Value (Redis).
+# Lưu ý gói miễn phí: web "ngủ" sau 15 phút không có truy cập (mở lần đầu mất ~1 phút);
+# Postgres miễn phí hết hạn sau 30 ngày (tạo lại / nâng cấp khi cần).
+
+databases:
+  - name: maia-db
+    plan: free
+    databaseName: maia_flower
+    user: maia
+
+services:
+  - type: keyvalue
+    name: maia-redis
+    plan: free
+    ipAllowList: [] # chỉ cho phép kết nối nội bộ trong Render
+    maxmemoryPolicy: noeviction # dùng làm broker Celery + rate limit: không được tự xóa khóa
+
+  - type: web
+    name: maia-flower
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: maia-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: maia-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MOCK_PAY_SECRET
+        generateValue: true
+      # Bản demo công khai: seed dữ liệu lần đầu, tự nhập hàng mỗi sáng, bật cổng thanh toán giả lập
+      - key: DEMO_MODE
+        value: "true"
+      - key: MOCK_GATEWAY_ENABLED
+        value: "true"
+      - key: RUN_WORKER_IN_WEB
+        value: "true"
+      # Render đứng trước app như reverse proxy -> lấy IP thật từ X-Forwarded-For cho rate limit
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
+      # Mật khẩu tài khoản demo (owner@maiaflower.vn / tho@maiaflower.vn) — Render hỏi khi tạo
+      - key: DEMO_ACCOUNT_PASSWORD
+        sync: false
+      # Tùy chọn: khóa Goong để gợi ý địa chỉ + quãng đường thực tế
+      - key: GOONG_API_KEY
+        sync: false

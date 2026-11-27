@@ -23,10 +23,13 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.db import SessionLocal, engine
 from app.core.errors import AppError
+from app.models import FlowerType
 from app.models.staff_user import StaffRole, StaffUser
 from app.schemas.staff import StaffCreate
 from app.seed.demo import SeedError, seed_demo
-from app.services.inventory import ledger_audit
+from app.services import pricing
+from app.services.forecasting import recompute_forecasts
+from app.services.inventory import ledger_audit, utcnow
 from app.services.staff import create_staff
 
 
@@ -62,16 +65,28 @@ async def _ensure_demo_accounts(session) -> list[str]:
 
 
 async def _seed_demo(
-    days: int, end_date: date | None, seed: int, reset: bool, demo_accounts: bool
+    days: int,
+    end_date: date | None,
+    seed: int,
+    reset: bool,
+    demo_accounts: bool,
+    if_empty: bool = False,
 ) -> None:
     started = time.perf_counter()
     async with SessionLocal() as session:
+        if if_empty and await session.scalar(select(FlowerType.id).limit(1)) is not None:
+            print("Demo data already present — skipping seed")
+            await engine.dispose()
+            return
         try:
             r = await seed_demo(session, days=days, end_date=end_date, seed=seed, reset=reset)
         except SeedError as e:
             sys.exit(str(e))
         checked, mismatches = await ledger_audit(session)
         accounts = await _ensure_demo_accounts(session) if demo_accounts else []
+        # Tính sẵn dự báo + giảm giá để bản demo có số liệu ngay
+        forecast_rows = await recompute_forecasts(session, utcnow())
+        priced = await pricing.recompute(session, utcnow())
     await engine.dispose()
     busiest = sorted(r.orders_by_day.items(), key=lambda kv: kv[1], reverse=True)[:5]
     print(f"Seeded {r.start_date} → {r.end_date} in {time.perf_counter() - started:.1f}s")
@@ -85,6 +100,7 @@ async def _seed_demo(
     )
     print("  busiest days: " + ", ".join(f"{d} ({n})" for d, n in busiest))
     print(f"  ledger audit: {checked:,} batches, {len(mismatches)} mismatches")
+    print(f"  forecasts: {forecast_rows} rows, templates discounted: {priced.templates_discounted}")
     if accounts:
         print("  demo accounts created: " + ", ".join(accounts))
 
@@ -110,6 +126,11 @@ def main() -> None:
         help="XÓA toàn bộ dữ liệu kinh doanh (giữ tài khoản, khung giờ, cài đặt)",
     )
     demo.add_argument(
+        "--if-empty",
+        action="store_true",
+        help="Chỉ seed khi chưa có dữ liệu (dùng khi khởi động bản demo)",
+    )
+    demo.add_argument(
         "--demo-accounts",
         action="store_true",
         help="Tạo tài khoản demo (mật khẩu từ DEMO_ACCOUNT_PASSWORD)",
@@ -122,9 +143,19 @@ def main() -> None:
             sys.exit("Passwords do not match")
         asyncio.run(_create_owner(args.email, args.name, password))
     elif args.command == "seed-demo":
-        if get_settings().app_env == "production":
-            sys.exit("Refusing to seed demo data in production")
-        asyncio.run(_seed_demo(args.days, args.end_date, args.seed, args.reset, args.demo_accounts))
+        s = get_settings()
+        if s.app_env == "production" and not s.demo_mode:
+            sys.exit("Refusing to seed demo data in production (set DEMO_MODE=true for a demo)")
+        asyncio.run(
+            _seed_demo(
+                args.days,
+                args.end_date,
+                args.seed,
+                args.reset,
+                args.demo_accounts,
+                args.if_empty,
+            )
+        )
 
 
 if __name__ == "__main__":

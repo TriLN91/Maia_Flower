@@ -1,8 +1,10 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # .env nằm ở thư mục gốc repo (cạnh docker-compose.yml)
@@ -52,10 +54,20 @@ class Settings(BaseSettings):
     mock_pay_secret: str = Field(
         default="dev-only-mock-gateway-secret-change-me-0000", min_length=32
     )
-    # URL công khai của API (cổng thanh toán redirect/IPN về đây)
-    public_base_url: str = "http://localhost:8000"
+    # URL công khai của API (cổng thanh toán redirect/IPN về đây).
+    # Trên Render tự lấy từ RENDER_EXTERNAL_URL nếu không đặt.
+    public_base_url: str = Field(
+        default_factory=lambda: os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:8000")
+    )
     # Trang kết quả thanh toán của frontend; trống = trả JSON ở API (dùng khi chưa có web)
     payment_return_url: str | None = None
+    # Bật cổng thanh toán giả lập. Trống = bật khi không phải production.
+    # Bản demo công khai đặt true (vẫn là production, chỉ là không có cổng thật).
+    mock_gateway_enabled: bool | None = None
+    # Thư mục bản build frontend (Vite `dist`). Có = FastAPI phục vụ luôn web (1 dịch vụ).
+    frontend_dist_dir: str | None = None
+    # Bản demo công khai: cho phép seed khi production, tự nhập hàng mỗi sáng.
+    demo_mode: bool = False
     # Mật khẩu tài khoản demo (seed-demo --demo-accounts). KHÔNG dùng cho tài khoản thật.
     demo_account_password: str | None = None
 
@@ -65,6 +77,30 @@ class Settings(BaseSettings):
     goong_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
     # Quãng đường thực tế ≈ đường chim bay × hệ số này (dùng khi không gọi được Goong)
     road_factor: float = Field(default=1.3, ge=1, le=3)
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def asyncpg_url(cls, value: object) -> object:
+        """Render/Heroku đưa `postgres://…` hoặc `postgresql://…` -> đổi sang driver asyncpg;
+        bỏ `sslmode` (asyncpg không nhận tham số này qua URL; mạng nội bộ không cần SSL)."""
+        if not isinstance(value, str):
+            return value
+        for prefix in ("postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                value = "postgresql+asyncpg://" + value[len(prefix) :]
+        parts = urlsplit(value)
+        query = [(k, v) for k, v in parse_qsl(parts.query) if k != "sslmode"]
+        return urlunsplit(parts._replace(query=urlencode(query)))
+
+    @model_validator(mode="after")
+    def _derived(self) -> "Settings":
+        self.public_base_url = self.public_base_url.rstrip("/")
+        if self.mock_gateway_enabled is None:
+            self.mock_gateway_enabled = self.app_env != "production"
+        # Web và API cùng một origin -> cổng thanh toán trả khách về trang kết quả của web
+        if self.payment_return_url is None and self.frontend_dist_dir:
+            self.payment_return_url = f"{self.public_base_url}/payment-result"
+        return self
 
     @field_validator("cors_origins", mode="before")
     @classmethod

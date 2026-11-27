@@ -300,8 +300,9 @@ async def fresh_today(session: AsyncSession, limit: int = 6) -> list[tuple[Bouqu
     surplus = dict(
         (
             await session.execute(
+                # Chỉ hoa đang thực sự được giảm (dư dưới ngưỡng tối thiểu thì không tính)
                 select(UrgencyScore.flower_type_id, UrgencyScore.surplus).where(
-                    UrgencyScore.surplus > 0
+                    UrgencyScore.discount_pct > 0
                 )
             )
         ).all()

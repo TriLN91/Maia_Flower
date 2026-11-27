@@ -81,3 +81,17 @@ jobs:
 
       - name: Type-check and build
         run: npm run build
+
+  docker:
+    # Build image production (frontend + backend) để chắc Dockerfile deploy luôn build được
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build production image
+        run: docker build -t maia-flower:ci .
+
+      - name: Image serves the web and refuses to start without secrets
+        run: |
+          docker run --rm --entrypoint python maia-flower:ci -c "import pathlib; assert pathlib.Path('/app/static/index.html').is_file()"
+          ! docker run --rm -e DATABASE_URL=postgresql://x@localhost/x maia-flower:ci python -c "from app.core.config import get_settings; get_settings()"

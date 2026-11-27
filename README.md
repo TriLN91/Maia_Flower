@@ -70,6 +70,10 @@ Trang quản trị: http://localhost:5173/admin — tài khoản demo `owner@mai
 3. Trang **cổng thanh toán giả lập** có các nút: thành công, thất bại, khách hủy, IPN đến trễ 2 phút,
    IPN gửi 2 lần — để thử mọi tình huống mà cổng thật có thể gây ra.
 
+## Deploy
+
+Render (gói miễn phí) qua Blueprint `render.yaml` — hướng dẫn từng bước và các giới hạn: [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Phát triển
 
 ```bash
@@ -122,5 +126,6 @@ docker-compose.yml
 - [x] **Ngày 9:** dự báo nhu cầu (thứ trong tuần × hệ số lễ, khử mùa vụ), gợi ý nhập hàng, backtest cuộn — WAPE 40,4% so với 46,0% (TB 14 ngày) và 58,3% (cùng thứ tuần trước); bộ máy giảm giá dùng dự báo
 - [x] **Ngày 10–11:** web cho khách (mobile-first): trang chủ + "Tươi nhất hôm nay", chi tiết mẫu, giỏ hàng, đặt hàng với bản đồ ghim vị trí + phí ship + khung giờ, thanh toán qua cổng giả lập, theo dõi đơn có đếm ngược giữ hoa, "Đơn của tôi"
 - [x] **Ngày 12:** trang quản trị (đăng nhập JWT, tách bundle): tổng quan theo khung giờ, đơn hàng + chuyển trạng thái, kho theo lô có thanh độ tươi, mẫu & giá + "Cần bán gấp" + lý do giảm giá, biểu đồ dự báo + gợi ý nhập hàng + backtest, cài đặt giảm giá & khung giờ
-- [ ] Ngày 13: deploy
+- [x] **Ngày 13 (chuẩn bị deploy):** image production 1 dịch vụ (API + web + Celery), `render.yaml` (Blueprint), chế độ demo (seed khi trống, tự nhập hàng mỗi sáng), CI build image — xem [docs/DEPLOY.md](docs/DEPLOY.md). *Chờ tạo dịch vụ trên Render.*
+- [ ] Ngày 14: test tải, video demo
 - [ ] …

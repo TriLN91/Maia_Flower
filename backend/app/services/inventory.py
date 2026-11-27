@@ -153,7 +153,7 @@ async def lock_batch(session: AsyncSession, batch_id: int) -> Batch:
 # =====================================================================
 # Nghiệp vụ
 # =====================================================================
-async def create_batch(session: AsyncSession, actor: StaffUser, data: BatchCreate) -> Batch:
+async def create_batch(session: AsyncSession, actor: StaffUser | None, data: BatchCreate) -> Batch:
     now = utcnow()
     flower = await session.get(FlowerType, data.flower_type_id)
     if flower is None:
@@ -185,7 +185,7 @@ async def create_batch(session: AsyncSession, actor: StaffUser, data: BatchCreat
         received_at=received_at,
         expected_expiry_at=expiry,
         note=data.note,
-        created_by_id=actor.id,
+        created_by_id=actor.id if actor else None,
     )
     session.add(batch)
     await session.flush()  # cần batch.id cho dòng sổ kho

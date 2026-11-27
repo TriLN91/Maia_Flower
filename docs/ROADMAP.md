@@ -383,13 +383,22 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 
 ---
 
-### 🚀 Ngày 13 — Deploy & tài liệu
+### 🚀 Ngày 13 — Deploy & tài liệu (đã chuẩn bị xong, chờ tạo dịch vụ Render)
 
 - Chọn nền tảng (đề xuất **Render** hoặc **Railway**: có Postgres + Redis + worker). **Bạn cần tạo tài khoản** trước ngày này.
 - Dockerfile production (không cài dev deps), biến môi trường production, `APP_ENV=production` tắt `/docs` công khai hoặc giữ cho nhà tuyển dụng xem (quyết định khi tới).
 - Chạy migration khi deploy, seed dữ liệu demo + tài khoản demo chỉ-xem.
 - CI: deploy tự động khi `main` xanh.
 - README hoàn chỉnh: sơ đồ kiến trúc (Mermaid), ảnh chụp màn hình, link demo, tài khoản demo, bảng MAPE, kết quả test tải, phần "Những bài toán khó đã giải".
+
+> **Ghi chú khi làm:**
+> - Chọn **một dịch vụ** (FastAPI phục vụ luôn bản build Vite, fallback SPA) thay vì tách web/API: cùng origin, không cần CORS, vừa gói miễn phí. Celery chạy chung container (`RUN_WORKER_IN_WEB`) vì worker riêng là gói trả phí.
+> - `DATABASE_URL` dạng `postgres://`/`postgresql://` của Render tự đổi sang asyncpg (bỏ `sslmode`); `PUBLIC_BASE_URL` mặc định lấy `RENDER_EXTERNAL_URL`; web cùng origin thì `PAYMENT_RETURN_URL` tự là `/payment-result`.
+> - `MOCK_GATEWAY_ENABLED` tách khỏi `APP_ENV`: production mặc định tắt cổng giả lập, bản demo bật rõ ràng.
+> - Chế độ demo: `seed-demo --if-empty --demo-accounts` khi khởi động; job 06:00 tự nhập hàng theo gợi ý nhập.
+> - **Lỗi phát hiện khi chạy thử image production:** lệnh `seed-demo` không làm gì mà vẫn exit 0 (script sửa file làm mất `asyncio.run`, lời gọi nằm sau `sys.exit`). Đã sửa + thêm test chạy CLI bằng tiến trình thật.
+> - **Lỗi thứ hai:** mục "Tươi nhất hôm nay" vẫn hiện mẫu có hoa dư dưới ngưỡng tối thiểu (không được giảm) kèm chữ "đang ưu đãi" → nay chỉ lấy hoa đang thực sự giảm giá.
+> - CI thêm job `docker`: build image production, kiểm tra có bản build web và từ chối khởi động khi thiếu secret.
 
 ---
 

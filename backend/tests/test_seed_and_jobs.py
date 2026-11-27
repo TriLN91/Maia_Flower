@@ -118,3 +118,71 @@ async def test_nightly_celery_task_runs():
     from app.workers.tasks import mark_expired_batches_task
 
     assert await asyncio.to_thread(mark_expired_batches_task.run) == 0
+
+
+# ---------------------------------------------------------------- chế độ demo
+async def test_demo_auto_restock_follows_suggestions(client, owner_headers):
+    from app.services.demo import auto_restock
+    from app.services.forecasting import local_today, restock_suggestions
+
+    async with SessionLocal() as s:
+        await seed_demo(s, days=70, seed=3)
+    async with SessionLocal() as s:
+        expected = [
+            line
+            for line in await restock_suggestions(s, utcnow(), local_today(utcnow()))
+            if line.suggested_qty > 0
+        ]
+        before = await s.scalar(select(func.count()).select_from(Batch))
+        assert await auto_restock(s, utcnow()) == len(expected) > 0
+        assert await s.scalar(select(func.count()).select_from(Batch)) == before + len(expected)
+        checked, mismatches = await ledger_audit(s)
+        assert mismatches == []
+
+
+async def test_demo_restock_task_is_noop_outside_demo_mode():
+    from app.workers.tasks import demo_auto_restock
+
+    assert await asyncio.to_thread(demo_auto_restock.run) == 0
+
+
+# ---------------------------------------------------------------- CLI (tiến trình thật)
+async def _cli(*args: str, **env: str) -> tuple[int, str]:
+    import os
+    import sys
+
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "app.cli",
+        *args,
+        env={**os.environ, **env},
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+    out, _ = await proc.communicate()
+    return proc.returncode, out.decode()
+
+
+async def test_cli_seed_demo_if_empty_and_demo_accounts():
+    """Bắt lỗi thật đã gặp khi chạy image production: lệnh seed không làm gì mà vẫn exit 0."""
+    code, out = await _cli(
+        "seed-demo",
+        "--days",
+        "10",
+        "--if-empty",
+        "--demo-accounts",
+        DEMO_ACCOUNT_PASSWORD="demo-pass-for-tests",
+    )
+    assert code == 0, out
+    assert "Seeded" in out and "demo accounts created" in out
+    async with SessionLocal() as s:
+        assert await s.scalar(select(func.count()).select_from(Order)) > 0
+
+    code, out = await _cli("seed-demo", "--if-empty")
+    assert code == 0 and "already present" in out
+
+
+async def test_cli_refuses_seed_in_production_without_demo_mode():
+    code, out = await _cli("seed-demo", "--days", "5", APP_ENV="production", DEMO_MODE="false")
+    assert code != 0 and "Refusing" in out

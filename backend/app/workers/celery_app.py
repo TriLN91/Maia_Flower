@@ -32,6 +32,10 @@ celery_app.conf.update(
             "task": "app.workers.tasks.recompute_pricing",
             "schedule": crontab(minute=5),  # mỗi giờ, phút thứ 5
         },
+        "demo-auto-restock": {
+            "task": "app.workers.tasks.demo_auto_restock",
+            "schedule": crontab(hour=23, minute=0),  # 06:00 giờ VN (task tự bỏ qua nếu không demo)
+        },
         "mark-expired-batches": {
             "task": "app.workers.tasks.mark_expired_batches",
             "schedule": crontab(hour=17, minute=30),  # 17:30 UTC = 00:30 giờ Việt Nam
