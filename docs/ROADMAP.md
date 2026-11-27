@@ -39,7 +39,7 @@
 ### 1.4 Tiến độ tổng
 ```
 Ngày:  1  2  3  4  5  6  7  8  9  10 11 12 13 14
-       ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ░░ ░░ ░░     11/14 ngày (~79%)
+       ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ░░ ░░     12/14 ngày (~86%)
 ```
 
 ---
@@ -361,7 +361,7 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 
 ---
 
-### 🛠️ Ngày 12 — Frontend quản trị (tối giản)
+### 🛠️ Ngày 12 — Frontend quản trị (tối giản) ✅
 
 | Màn hình | Nội dung |
 |---|---|
@@ -372,6 +372,14 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 | Mẫu & giá | Sửa mẫu, công thức, giá, cảnh báo biên lợi nhuận, nhật ký giảm giá |
 | Dự báo | Biểu đồ dự báo 14 ngày, gợi ý nhập hàng |
 | Cài đặt | Khung giờ, phí ship, giảm giá, nhân viên (owner) |
+
+> **Ghi chú khi làm:**
+> - Khu `/admin` cùng app React nhưng **tải tách riêng** (lazy): bundle khách 489 KB → 326 KB; trang đặt hàng (Leaflet) cũng tách.
+> - JWT lưu `sessionStorage` (đóng tab là đăng xuất), tự đăng xuất khi 401/hết hạn; menu "Cài đặt" và các nút hủy/hoàn tiền chỉ hiện với chủ shop (backend vẫn chặn quyền).
+> - Biểu đồ dự báo tự vẽ SVG (không thêm thư viện): một chuỗi một màu, cột bo 4px, lưới nhạt, tooltip giải thích *nền × hệ số lễ*, có chế độ bảng.
+> - Backend: `seed-demo --demo-accounts` (mật khẩu từ `DEMO_ACCOUNT_PASSWORD`), danh sách mẫu admin kèm `current_discount_pct`.
+> - **Phát hiện nhờ giao diện:** Hồng kem dư đúng 1 cành vẫn kích hoạt bậc giảm 20% → cả bó "Cẩm Tú Mộng Mơ" giảm 9%. Thêm `min_surplus_stems` (mặc định 5) + test; thẻ tổng quan chỉ đếm hoa đang thực sự được giảm.
+> - Chưa làm: quản lý nhân viên, sửa công thức mẫu trên web (dùng Swagger).
 
 ---
 

@@ -17,7 +17,7 @@ from app.schemas.catalog import (
     TemplateCreate,
     TemplateUpdate,
 )
-from app.services import catalog
+from app.services import catalog, pricing
 
 # Thợ bó xem được danh mục (để biết công thức khi bó); chỉ chủ shop được sửa.
 router = APIRouter(prefix="/admin")
@@ -75,8 +75,16 @@ async def update_supplier(
 
 # ---------- Mẫu bó hoa ----------
 @router.get("/templates", response_model=list[TemplateAdminOut], tags=["admin: templates"])
-async def list_templates(session: SessionDep, _: CurrentStaff) -> Sequence[BouquetTemplate]:
-    return await catalog.list_templates_admin(session)
+async def list_templates(session: SessionDep, _: CurrentStaff) -> list[TemplateAdminOut]:
+    """Kèm `current_discount_pct` — mức giảm động đang áp dụng."""
+    rows = await catalog.list_templates_admin(session)
+    discounts = await pricing.current_discounts(session, [t.id for t in rows])
+    return [
+        TemplateAdminOut.model_validate(t).model_copy(
+            update={"current_discount_pct": discounts.get(t.id, 0)}
+        )
+        for t in rows
+    ]
 
 
 @router.post(

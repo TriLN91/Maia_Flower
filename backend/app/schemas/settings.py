@@ -73,7 +73,9 @@ class PricingSettings(BaseModel):
     max_discount_pct: Annotated[int, Field(ge=0, le=90)] = 30  # trần giảm cho một mẫu
     min_margin_pct: Annotated[int, Field(ge=0, le=500)] = 20  # giá sau giảm ≥ vốn × (1 + x%)
     max_step_pct: Annotated[int, Field(ge=1, le=100)] = 10  # mỗi lần chạy đổi tối đa ±x điểm %
-    demand_lookback_days: Annotated[int, Field(ge=1, le=90)] = 14  # ước lượng nhu cầu (tới ngày 9)
+    demand_lookback_days: Annotated[int, Field(ge=1, le=90)] = 14  # dự phòng khi chưa có dự báo
+    # Dư thừa phải đạt ít nhất bấy nhiêu cành mới giảm giá — tránh 1 cành thừa kéo cả bó xuống giá
+    min_surplus_stems: Annotated[int, Field(ge=1, le=500)] = 5
 
     @model_validator(mode="after")
     def _tiers_within_horizon(self) -> Self:

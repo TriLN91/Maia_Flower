@@ -278,3 +278,25 @@ async def test_concurrent_recomputes_are_serialized(setup):
         from app.services.pricing import current_discounts
 
         assert (await current_discounts(s, [setup["all_rose"]]))[setup["all_rose"]] == 20
+
+
+async def test_admin_template_list_shows_current_discount(client, owner_headers, setup):
+    await setup["add_batch"](setup["rose"], 50, days_ago=6.3)
+    await run_recompute(client, owner_headers)
+    rows = (await client.get("/api/v1/admin/templates", headers=owner_headers)).json()
+    by_name = {t["name"]: t["current_discount_pct"] for t in rows}
+    assert by_name == {"Mix": 8, "Toàn Hồng": 10, "Cao Cấp": 0}
+
+
+async def test_tiny_surplus_does_not_trigger_discount(client, owner_headers, setup):
+    """Phát hiện khi xem trang quản trị: dư 1 cành từng kéo cả bó giảm 9%."""
+    await setup["add_batch"](setup["rose"], 4, days_ago=6.3)  # dư 4 cành < ngưỡng 5
+    await run_recompute(client, owner_headers)
+    urgency = (await client.get("/api/v1/admin/urgency", headers=owner_headers)).json()
+    rose = next(u for u in urgency if u["name"] == "Hồng")
+    assert (rose["surplus"], rose["discount_pct"]) == (4, 0)
+    assert (await shop_prices(client))["Toàn Hồng"] == (0, 400_000)
+
+    await setup["add_batch"](setup["rose"], 1, days_ago=6.3)  # 5 cành -> đủ ngưỡng
+    await run_recompute(client, owner_headers)
+    assert (await shop_prices(client))["Toàn Hồng"] == (10, 360_000)

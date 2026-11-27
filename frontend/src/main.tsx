@@ -1,18 +1,23 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StrictMode } from "react";
+import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Link, Route, Routes } from "react-router";
 import { ApiError } from "./api/client";
 import { Layout } from "./components/Layout";
-import { Empty } from "./components/ui";
+import { Empty, Loading } from "./components/ui";
 import "./index.css";
 import { CartPage } from "./pages/CartPage";
-import { CheckoutPage } from "./pages/CheckoutPage";
 import { HomePage } from "./pages/HomePage";
 import { MyOrdersPage } from "./pages/MyOrdersPage";
 import { PaymentResultPage } from "./pages/PaymentResultPage";
 import { TemplatePage } from "./pages/TemplatePage";
 import { TrackPage } from "./pages/TrackPage";
+
+// Tải tách riêng: khu quản trị và trang đặt hàng (có Leaflet) chỉ tải khi cần
+const AdminApp = lazy(() => import("./admin/AdminApp"));
+const CheckoutPage = lazy(() =>
+  import("./pages/CheckoutPage").then((m) => ({ default: m.CheckoutPage })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,11 +45,26 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route
+            path="admin/*"
+            element={
+              <Suspense fallback={<Loading />}>
+                <AdminApp />
+              </Suspense>
+            }
+          />
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
             <Route path="mau/:slug" element={<TemplatePage />} />
             <Route path="gio-hang" element={<CartPage />} />
-            <Route path="dat-hang" element={<CheckoutPage />} />
+            <Route
+              path="dat-hang"
+              element={
+                <Suspense fallback={<Loading />}>
+                  <CheckoutPage />
+                </Suspense>
+              }
+            />
             <Route path="payment-result" element={<PaymentResultPage />} />
             <Route path="don/:token" element={<TrackPage />} />
             <Route path="don-cua-toi" element={<MyOrdersPage />} />

@@ -41,7 +41,7 @@ Sau đó bấm **Authorize** trong Swagger, nhập email vào ô `username`.
 ### Dữ liệu demo
 
 ```bash
-docker compose exec api python -m app.cli seed-demo --reset   # 365 ngày, --seed 42
+docker compose exec api python -m app.cli seed-demo --reset --demo-accounts   # 365 ngày, --seed 42
 ```
 
 Mô phỏng từng ngày: nhập lô theo lịch, đơn theo thứ trong tuần và ngày lễ (14/2, 8/3, 20/10, 20/11,
@@ -60,6 +60,8 @@ Rolling origin 56 ngày × dự báo 7 ngày tới × 15 loại hoa (5.880 đi�
 | Cùng thứ tuần trước | 58,3% |
 
 Hoa bán nhiều sai số thấp (baby trắng 25%, lá chanh 28%); hoa bán vài cành/ngày nhiễu cao (lan hồ điệp, cẩm tú cầu) — phần lớn sai số là nhiễu ngẫu nhiên không dự báo được. Dùng WAPE thay MAPE vì MAPE bùng nổ ở ngày chỉ bán 1–2 cành.
+
+Trang quản trị: http://localhost:5173/admin — tài khoản demo `owner@maiaflower.vn` (chủ shop) và `tho@maiaflower.vn` (thợ bó), mật khẩu là giá trị `DEMO_ACCOUNT_PASSWORD` trong `.env`.
 
 ### Thử thanh toán
 
@@ -119,5 +121,6 @@ docker-compose.yml
 - [x] **Ngày 8:** bộ máy "Cần bán gấp" + giảm giá động tự động (trần, sàn biên lợi nhuận, giới hạn bước, khóa mẫu, công tắc tổng, nhật ký lý do), mục "Tươi nhất hôm nay"
 - [x] **Ngày 9:** dự báo nhu cầu (thứ trong tuần × hệ số lễ, khử mùa vụ), gợi ý nhập hàng, backtest cuộn — WAPE 40,4% so với 46,0% (TB 14 ngày) và 58,3% (cùng thứ tuần trước); bộ máy giảm giá dùng dự báo
 - [x] **Ngày 10–11:** web cho khách (mobile-first): trang chủ + "Tươi nhất hôm nay", chi tiết mẫu, giỏ hàng, đặt hàng với bản đồ ghim vị trí + phí ship + khung giờ, thanh toán qua cổng giả lập, theo dõi đơn có đếm ngược giữ hoa, "Đơn của tôi"
-- [ ] Ngày 12: trang quản trị
+- [x] **Ngày 12:** trang quản trị (đăng nhập JWT, tách bundle): tổng quan theo khung giờ, đơn hàng + chuyển trạng thái, kho theo lô có thanh độ tươi, mẫu & giá + "Cần bán gấp" + lý do giảm giá, biểu đồ dự báo + gợi ý nhập hàng + backtest, cài đặt giảm giá & khung giờ
+- [ ] Ngày 13: deploy
 - [ ] …

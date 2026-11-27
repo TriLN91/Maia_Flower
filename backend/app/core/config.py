@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     public_base_url: str = "http://localhost:8000"
     # Trang kết quả thanh toán của frontend; trống = trả JSON ở API (dùng khi chưa có web)
     payment_return_url: str | None = None
+    # Mật khẩu tài khoản demo (seed-demo --demo-accounts). KHÔNG dùng cho tài khoản thật.
+    demo_account_password: str | None = None
 
     # --- Bản đồ (Goong). Không có key -> tính đường chim bay × hệ số đường vòng ---
     goong_api_key: str | None = None

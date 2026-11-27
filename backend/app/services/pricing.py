@@ -162,7 +162,11 @@ async def compute_urgency(
         avg_fresh = sum(i.freshness * b.quantity_available for b, i in infos) / qty if qty else None
         expected = demand.get(f.id, 0.0)
         surplus = max(0, qty - math.ceil(expected))
-        pct = settings.flower_discount(min_days) if surplus and min_days is not None else 0
+        pct = (
+            settings.flower_discount(min_days)
+            if surplus >= settings.min_surplus_stems and min_days is not None
+            else 0
+        )
         score = round(surplus * (1 - (avg_fresh or 0)), 2)
         out.append(
             FlowerUrgency(

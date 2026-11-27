@@ -137,6 +137,7 @@ class TemplateAdminOut(BaseModel):
     updated_by_id: int | None
     created_at: datetime
     updated_at: datetime
+    current_discount_pct: int = 0
 
 
 class TemplatePublicOut(BaseModel):
