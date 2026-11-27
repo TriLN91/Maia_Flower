@@ -1,7 +1,7 @@
 # 🌸 Maia_Flower
 
-**🌐 Demo trực tiếp:** https://maia-flower.onrender.com · Quản trị: [/admin](https://maia-flower.onrender.com/admin) · API: [/docs](https://maia-flower.onrender.com/docs)  
-*Gói miễn phí của Render: lần mở đầu sau một lúc không dùng có thể mất ~1 phút để "thức dậy". Thanh toán qua cổng giả lập — không có tiền thật.*
+**🌐 Demo trực tiếp:** https://maia-flower-web.onrender.com · Quản trị: [/admin](https://maia-flower-web.onrender.com/admin) · API: [/docs](https://maia-flower.onrender.com/docs)  
+*Web là Static Site (CDN) nên hiện ngay; API chạy gói miễn phí của Render — nếu đang "ngủ", web báo "máy chủ đang khởi động" và dữ liệu tự hiện sau ~1 phút. Thanh toán qua cổng giả lập — không có tiền thật.*
 
 Website bán hoa bó cho một cửa hàng. Backend được thiết kế quanh đặc tính **hoa là hàng mau hỏng**:
 
@@ -129,6 +129,6 @@ docker-compose.yml
 - [x] **Ngày 9:** dự báo nhu cầu (thứ trong tuần × hệ số lễ, khử mùa vụ), gợi ý nhập hàng, backtest cuộn — WAPE 40,4% so với 46,0% (TB 14 ngày) và 58,3% (cùng thứ tuần trước); bộ máy giảm giá dùng dự báo
 - [x] **Ngày 10–11:** web cho khách (mobile-first): trang chủ + "Tươi nhất hôm nay", chi tiết mẫu, giỏ hàng, đặt hàng với bản đồ ghim vị trí + phí ship + khung giờ, thanh toán qua cổng giả lập, theo dõi đơn có đếm ngược giữ hoa, "Đơn của tôi"
 - [x] **Ngày 12:** trang quản trị (đăng nhập JWT, tách bundle): tổng quan theo khung giờ, đơn hàng + chuyển trạng thái, kho theo lô có thanh độ tươi, mẫu & giá + "Cần bán gấp" + lý do giảm giá, biểu đồ dự báo + gợi ý nhập hàng + backtest, cài đặt giảm giá & khung giờ
-- [x] **Ngày 13 (deploy):** image production 1 dịch vụ (API + web + Celery), `render.yaml` (Blueprint), chế độ demo (seed khi trống, tự nhập hàng mỗi sáng), CI build image — xem [docs/DEPLOY.md](docs/DEPLOY.md). Đang chạy tại https://maia-flower.onrender.com
+- [x] **Ngày 13 (deploy):** image production 1 dịch vụ (API + web + Celery), `render.yaml` (Blueprint), chế độ demo (seed khi trống, tự nhập hàng mỗi sáng), CI build image — xem [docs/DEPLOY.md](docs/DEPLOY.md). Web: https://maia-flower-web.onrender.com (Static Site) · API: https://maia-flower.onrender.com
 - [ ] Ngày 14: test tải, video demo
 - [ ] …
