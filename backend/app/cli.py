@@ -33,6 +33,42 @@ from app.services.inventory import ledger_audit, utcnow
 from app.services.staff import create_staff
 
 
+async def _wait_for_db(max_wait_s: float) -> None:
+    """Chờ database sẵn sàng (lúc mới tạo trên Render có thể chậm vài chục giây).
+    Hết giờ thì in lý do dễ hiểu thay vì traceback dài, và thoát mã 1."""
+    import socket
+    from urllib.parse import urlsplit
+
+    from sqlalchemy import text
+
+    deadline = time.monotonic() + max_wait_s
+    host = urlsplit(get_settings().database_url).hostname
+    attempt, last = 0, None
+    while True:
+        attempt += 1
+        try:
+            async with engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            print(f"Database is ready (attempt {attempt})")
+            await engine.dispose()
+            return
+        except Exception as e:  # noqa: BLE001 — mọi lỗi kết nối đều thử lại
+            last = e
+        if time.monotonic() >= deadline:
+            break
+        print(f"Waiting for database at {host!r}… ({type(last).__name__})", flush=True)
+        await asyncio.sleep(min(5, max(0.5, deadline - time.monotonic())))
+    await engine.dispose()
+    hint = ""
+    if isinstance(last, socket.gaierror):
+        hint = (
+            "\n  -> Cannot resolve the database host. On Render, the web service, Postgres and"
+            " Key Value must be in the SAME region (internal hostnames only resolve within a"
+            " region)."
+        )
+    sys.exit(f"Database not reachable after {max_wait_s:.0f}s: {type(last).__name__}: {last}{hint}")
+
+
 async def _create_owner(email: str, name: str, password: str) -> None:
     try:
         data = StaffCreate(email=email, full_name=name, password=password, role=StaffRole.OWNER)
@@ -108,6 +144,8 @@ async def _seed_demo(
 def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
+    wait = sub.add_parser("wait-db", help="Chờ database sẵn sàng (dùng khi khởi động)")
+    wait.add_argument("--timeout", type=float, default=90)
     owner = sub.add_parser("create-owner", help="Tạo tài khoản chủ shop")
     owner.add_argument("--email", required=True)
     owner.add_argument("--name", required=True)
@@ -137,7 +175,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.command == "create-owner":
+    if args.command == "wait-db":
+        asyncio.run(_wait_for_db(args.timeout))
+    elif args.command == "create-owner":
         password = getpass.getpass("Password (min 8 chars): ")
         if password != getpass.getpass("Confirm password: "):
             sys.exit("Passwords do not match")

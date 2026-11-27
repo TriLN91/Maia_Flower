@@ -38,6 +38,18 @@
 Mỗi lần push lên `main`, Render tự build và deploy lại (dữ liệu giữ nguyên; seed chỉ chạy
 khi database trống).
 
+## Xử lý sự cố
+
+| Triệu chứng trong log | Nguyên nhân | Cách sửa |
+|---|---|---|
+| `Cannot resolve the database host … SAME region` / `socket.gaierror: Name or service not known` | Web và Postgres/Key Value **khác region** (địa chỉ nội bộ chỉ phân giải trong cùng region; Render mặc định `oregon`) | `render.yaml` đặt `region: singapore` cho cả 3. Region không đổi được sau khi tạo → xóa tài nguyên sai region rồi tạo lại (xem dưới) |
+| `Waiting for database…` lặp lại rồi hết 90 giây | Database mới tạo chưa sẵn sàng / đang bảo trì | Bấm **Manual Deploy** lại sau vài phút |
+| `Refusing to seed demo data in production` | Thiếu `DEMO_MODE=true` | Thêm biến trong tab Environment |
+
+**Tạo lại khi lỡ tạo sai region:** Dashboard → mở từng tài nguyên `maia-flower`, `maia-redis`,
+`maia-db` → *Settings* → *Delete* (database còn trống nên không mất gì) → xóa Blueprint →
+**New → Blueprint** chọn lại repo.
+
 ## Giới hạn của gói miễn phí
 
 | Giới hạn | Ảnh hưởng | Cách xử lý |
@@ -66,7 +78,7 @@ khi database trống).
 Image production được chạy thử trên máy với cấu hình giống Render (database trống, URL dạng
 `postgresql://…?sslmode=…`, `RENDER_EXTERNAL_URL`, `APP_ENV=production`):
 
-- Migration → seed 12 tháng (7.295 đơn, sổ kho khớp 100%) → dự báo → tài khoản demo → Celery → API.
+- Chờ database (`wait-db`, báo rõ lỗi khác region) → migration → seed 12 tháng (7.295 đơn, sổ kho khớp 100%) → dự báo → tài khoản demo → Celery → API.
 - Health check xanh; chạy bằng user không phải root.
 - Web được phục vụ ở `/` và mọi đường dẫn của React Router (`/admin/kho`…); API sai đường dẫn
   trả 404 chứ không trả HTML.

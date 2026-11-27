@@ -186,3 +186,20 @@ async def test_cli_seed_demo_if_empty_and_demo_accounts():
 async def test_cli_refuses_seed_in_production_without_demo_mode():
     code, out = await _cli("seed-demo", "--days", "5", APP_ENV="production", DEMO_MODE="false")
     assert code != 0 and "Refusing" in out
+
+
+async def test_cli_wait_db_succeeds_when_database_is_up():
+    code, out = await _cli("wait-db", "--timeout", "10")
+    assert code == 0 and "Database is ready" in out
+
+
+async def test_cli_wait_db_explains_unresolvable_host():
+    """Đúng lỗi đã gặp trên Render: database khác region -> tên máy không phân giải được."""
+    code, out = await _cli(
+        "wait-db",
+        "--timeout",
+        "1",
+        DATABASE_URL="postgresql://u:p@dpg-does-not-exist-a:5432/x",
+    )
+    assert code != 0
+    assert "SAME region" in out and "gaierror" in out

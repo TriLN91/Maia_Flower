@@ -1,6 +1,10 @@
 #!/bin/sh
-# Khởi động bản production (Render). Thứ tự: migration -> (demo) seed -> (tùy chọn) Celery -> API.
+# Khởi động bản production (Render).
+# Thứ tự: chờ DB -> migration -> (demo) seed -> (tùy chọn) Celery -> API.
 set -e
+
+# Database mới tạo có thể chưa sẵn sàng; lỗi cấu hình (vd. khác region) sẽ được báo rõ ràng
+python -m app.cli wait-db --timeout 90
 
 alembic upgrade head
 

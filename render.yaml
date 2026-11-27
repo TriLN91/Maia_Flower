@@ -2,10 +2,13 @@
 # Gói miễn phí: 1 web service (API + web + Celery) + Postgres + Key Value (Redis).
 # Lưu ý gói miễn phí: web "ngủ" sau 15 phút không có truy cập (mở lần đầu mất ~1 phút);
 # Postgres miễn phí hết hạn sau 30 ngày (tạo lại / nâng cấp khi cần).
+# QUAN TRỌNG: cả 3 tài nguyên phải CÙNG region — địa chỉ nội bộ của database/Redis chỉ phân giải
+# được trong cùng region (Render mặc định "oregon" nếu không ghi).
 
 databases:
   - name: maia-db
     plan: free
+    region: singapore
     databaseName: maia_flower
     user: maia
 
@@ -13,6 +16,7 @@ services:
   - type: keyvalue
     name: maia-redis
     plan: free
+    region: singapore
     ipAllowList: [] # chỉ cho phép kết nối nội bộ trong Render
     maxmemoryPolicy: noeviction # dùng làm broker Celery + rate limit: không được tự xóa khóa
 

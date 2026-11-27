@@ -399,6 +399,7 @@ order_allocations(id, order_item_id, batch_id, flower_type_id, quantity)
 > - **Lỗi phát hiện khi chạy thử image production:** lệnh `seed-demo` không làm gì mà vẫn exit 0 (script sửa file làm mất `asyncio.run`, lời gọi nằm sau `sys.exit`). Đã sửa + thêm test chạy CLI bằng tiến trình thật.
 > - **Lỗi thứ hai:** mục "Tươi nhất hôm nay" vẫn hiện mẫu có hoa dư dưới ngưỡng tối thiểu (không được giảm) kèm chữ "đang ưu đãi" → nay chỉ lấy hoa đang thực sự giảm giá.
 > - CI thêm job `docker`: build image production, kiểm tra có bản build web và từ chối khởi động khi thiếu secret.
+> - **Lần deploy đầu thất bại:** `render.yaml` chỉ đặt `region: singapore` cho web → Postgres/Key Value mặc định ở Oregon → địa chỉ nội bộ không phân giải được (`gaierror`). Sửa: cùng region cho cả 3 + lệnh `wait-db` chờ DB tối đa 90 giây và in lý do dễ hiểu (có test giả lập đúng lỗi này).
 
 ---
 
