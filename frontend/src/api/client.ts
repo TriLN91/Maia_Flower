@@ -1,3 +1,4 @@
+import { apiUrl } from "./base";
 import type {
   CartLine,
   CartQuote,
@@ -25,9 +26,11 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`/api/v1${path}`, {
+  const res = await fetch(apiUrl(path), {
     ...init,
-    headers: { "Content-Type": "application/json", ...init.headers },
+    // Chỉ gửi Content-Type khi có body: GET không kèm header "lạ" -> là "simple request",
+    // trình duyệt không phải gửi thêm OPTIONS (preflight) khi web và API khác origin.
+    headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
   });
   if (res.ok) return (res.status === 204 ? undefined : await res.json()) as T;
 

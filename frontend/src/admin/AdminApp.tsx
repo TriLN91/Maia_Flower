@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router";
+import { ServerWakeBanner } from "../components/ServerWakeBanner";
 import { Button, ErrorBox } from "../components/ui";
 import { friendlyError } from "../lib/errors";
 import { login, logout, useSession } from "./api";
@@ -41,7 +42,8 @@ function LoginPage() {
     }
   };
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-stone-50 p-4">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-stone-50 p-4">
+      <div className="fixed inset-x-0 top-0"><ServerWakeBanner /></div>
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200">
         <h1 className="text-xl font-extrabold text-rose-700">🌸 Maia Flower · Quản trị</h1>
         <label className="block space-y-1">

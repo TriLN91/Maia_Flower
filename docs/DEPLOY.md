@@ -3,25 +3,37 @@
 ## Kiến trúc
 
 ```
-                ┌──────────────── Render ────────────────┐
- Trình duyệt ──▶│  Web service "maia-flower" (Docker)    │
-                │   ├─ FastAPI: /api/v1, /docs, /mock-gateway
-                │   ├─ Web React (bản build Vite) — cùng origin
-                │   └─ Celery worker + beat (chạy chung container)
-                │        │                │               │
-                │  Postgres "maia-db"   Key Value "maia-redis"
-                └────────────────────────────────────────┘
+                    ┌──────────────────────── Render ───────────────────────┐
+ Trình duyệt ──────▶│ Static Site "maia-flower-web" (CDN, không ngủ)         │
+   │                │   web React — https://maia-flower-web.onrender.com     │
+   │  fetch /api/v1 │                                                        │
+   └───────────────▶│ Web service "maia-flower" (Docker, ngủ sau 15')        │
+                    │   FastAPI /api/v1, /docs, /mock-gateway                │
+                    │   + Celery worker + beat (chung container)             │
+                    │        │                     │                         │
+                    │  Postgres "maia-db"     Key Value "maia-redis"         │
+                    └────────────────────────────────────────────────────────┘
 ```
 
-- **Một dịch vụ web** phục vụ cả API lẫn web → cùng tên miền, không cần CORS; URL công khai lấy
-  tự động từ biến `RENDER_EXTERNAL_URL` mà Render cấp.
-- **Celery chạy chung container** vì background worker của Render là gói trả phí
+- **Web là Static Site riêng** (miễn phí, phục vụ qua CDN, **không ngủ**): mở ra là thấy giao diện
+  ngay. Nếu API đang ngủ, web hiện banner *"Máy chủ demo đang khởi động"* và dữ liệu tự hiện
+  khi API thức (~1 phút) thay vì trắng trang.
+- **API** chỉ còn backend. `FRONTEND_URL` trỏ về web → tự thêm vào CORS, cổng thanh toán trả khách
+  về `/payment-result` của web, mở `/` của API thì chuyển sang web.
+- Web biết địa chỉ API qua biến build `VITE_API_BASE_URL`. Request GET không gửi `Content-Type`
+  nên là *simple request* — trình duyệt không phải gửi thêm `OPTIONS` (preflight) khi khác origin.
+- **Celery chạy chung container với API** vì background worker của Render là gói trả phí
   (`RUN_WORKER_IN_WEB=true`). Muốn tách: tạo thêm *Background Worker* cùng image với lệnh
   `celery -A app.workers.celery_app worker --beat` và đặt `RUN_WORKER_IN_WEB=false`.
 - **Chế độ demo** (`DEMO_MODE=true`): lần khởi động đầu tự sinh dữ liệu 12 tháng + tài khoản
-  demo; mỗi sáng 06:00 (giờ VN) tự nhập hàng theo *gợi ý nhập hàng* của hệ thống để bản demo
-  luôn còn hoa cho khách đặt thử.
+  demo; mỗi sáng 06:00 (giờ VN) tự nhập hàng theo *gợi ý nhập hàng* của hệ thống.
+- Vẫn có thể chạy **một dịch vụ** (API phục vụ luôn web): đặt `FRONTEND_DIST_DIR` tới một bản build
+  Vite — FastAPI tự phục vụ `/assets` và fallback SPA.
 - Toàn bộ hạ tầng khai báo trong [`render.yaml`](../render.yaml) (Blueprint).
+
+**Trùng tên:** tên dịch vụ trên Render là duy nhất toàn cầu. Nếu URL thực tế khác
+`maia-flower.onrender.com` / `maia-flower-web.onrender.com`, sửa `FRONTEND_URL` (dịch vụ API) và
+`VITE_API_BASE_URL` (Static Site) cho khớp rồi deploy lại.
 
 ## Các bước (khoảng 10 phút)
 
@@ -33,7 +45,8 @@
      `tho@maiaflower.vn` — chỉ là tài khoản demo).
    - `GOONG_API_KEY`: để trống nếu chưa có.
 4. **Apply** → đợi build (~5–8 phút lần đầu). Log sẽ có dòng `Seeded … demo accounts created`.
-5. Mở `https://<tên-dịch-vụ>.onrender.com` — web cho khách; `/admin` — quản trị; `/docs` — Swagger.
+5. Mở `https://maia-flower-web.onrender.com` (web cho khách, `/admin` quản trị) và
+   `https://maia-flower.onrender.com/docs` (Swagger).
 
 Mỗi lần push lên `main`, Render tự build và deploy lại (dữ liệu giữ nguyên; seed chỉ chạy
 khi database trống).
@@ -69,6 +82,8 @@ khi database trống).
 | `DEMO_MODE` | `true` | seed khi trống + tự nhập hàng mỗi sáng |
 | `MOCK_GATEWAY_ENABLED` | `true` | production mặc định **tắt** cổng giả lập; bản demo bật |
 | `RUN_WORKER_IN_WEB` | `true` | Celery chạy chung container |
+| `FRONTEND_URL` | URL Static Site | CORS + trang kết quả thanh toán + `/` chuyển sang web |
+| `VITE_API_BASE_URL` (Static Site) | URL API | đặt lúc build web |
 | `TRUST_PROXY_HEADERS` | `true` | lấy IP thật sau proxy của Render cho rate limit |
 | `DEMO_ACCOUNT_PASSWORD` | bạn nhập | |
 | `GOONG_API_KEY` | (tùy chọn) | không có thì tính đường chim bay × 1,3 |
@@ -80,8 +95,9 @@ Image production được chạy thử trên máy với cấu hình giống Rend
 
 - Chờ database (`wait-db`, báo rõ lỗi khác region) → migration → seed 12 tháng (7.295 đơn, sổ kho khớp 100%) → dự báo → tài khoản demo → Celery → API.
 - Health check xanh; chạy bằng user không phải root.
-- Web được phục vụ ở `/` và mọi đường dẫn của React Router (`/admin/kho`…); API sai đường dẫn
-  trả 404 chứ không trả HTML.
+- Chạy thử **khác origin** (web 4173 ↔ API 8081): CORS preflight cho POST + `Idempotency-Key`,
+  đặt hàng → cổng giả lập trên API → quay về `/payment-result` của web; tạm dừng API → web vẫn hiện
+  kèm banner, dữ liệu tự hiện khi API chạy lại; GET không còn kèm `OPTIONS`.
 - Luồng đầu cuối: báo giá ship → đặt hàng → thanh toán qua cổng giả lập → quay về
   `/payment-result` cùng origin → đơn `paid`.
 

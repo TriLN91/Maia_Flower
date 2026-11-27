@@ -79,11 +79,13 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Type-check and build
+      - name: Type-check and build (như Static Site trên Render)
         run: npm run build
+        env:
+          VITE_API_BASE_URL: https://maia-flower.onrender.com
 
   docker:
-    # Build image production (frontend + backend) để chắc Dockerfile deploy luôn build được
+    # Build image production của API để chắc Dockerfile deploy luôn build được
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -91,7 +93,6 @@ jobs:
       - name: Build production image
         run: docker build -t maia-flower:ci .
 
-      - name: Image serves the web and refuses to start without secrets
+      - name: Image refuses to start without secrets
         run: |
-          docker run --rm --entrypoint python maia-flower:ci -c "import pathlib; assert pathlib.Path('/app/static/index.html').is_file()"
           ! docker run --rm -e DATABASE_URL=postgresql://x@localhost/x maia-flower:ci python -c "from app.core.config import get_settings; get_settings()"

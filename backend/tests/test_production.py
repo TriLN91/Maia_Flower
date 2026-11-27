@@ -65,3 +65,37 @@ async def test_spa_serving(tmp_path):
         assert (await c.get("/docs-xyz")).status_code == 404
         traversal = await c.get("/..%2Fsecret.txt")
         assert "nope" not in traversal.text
+
+
+def test_separate_frontend_url_wires_cors_and_return_url():
+    s = make(
+        frontend_url="https://maia-web.onrender.com/", public_base_url="https://maia.onrender.com"
+    )
+    assert s.frontend_url == "https://maia-web.onrender.com"
+    assert "https://maia-web.onrender.com" in s.cors_origins
+    assert s.payment_return_url == "https://maia-web.onrender.com/payment-result"
+    explicit = make(frontend_url="https://w", payment_return_url="https://other/done")
+    assert explicit.payment_return_url == "https://other/done"
+
+
+async def test_api_root_redirects_to_separate_frontend(monkeypatch):
+    import app.main as main_module
+
+    # Dựng app từ cấu hình MỚI (validator chạy lại -> CORS có origin của web), như khi khởi động
+    settings = make(frontend_url="https://maia-web.onrender.com")
+    monkeypatch.setattr(main_module, "get_settings", lambda: settings)
+    app = main_module.create_app()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
+        r = await c.get("/")
+        assert r.status_code == 307
+        assert r.headers["location"] == "https://maia-web.onrender.com"
+        pre = await c.options(
+            "/api/v1/health",
+            headers={
+                "Origin": "https://maia-web.onrender.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "idempotency-key,content-type",
+            },
+        )
+        assert pre.status_code == 200
+        assert pre.headers["access-control-allow-origin"] == "https://maia-web.onrender.com"

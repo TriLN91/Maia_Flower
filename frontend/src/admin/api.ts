@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { apiUrl } from "../api/base";
 import { ApiError } from "../api/client";
 import type { OrderStatus } from "../api/types";
 
@@ -43,10 +44,10 @@ export function useSession() {
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (current && current.expiresAt <= Date.now()) logout();
-  const res = await fetch(`/api/v1${path}`, {
+  const res = await fetch(apiUrl(path), {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
       ...(current ? { Authorization: `Bearer ${current.token}` } : {}),
       ...init.headers,
     },
@@ -70,7 +71,7 @@ const send = <T>(method: string, path: string, body?: unknown) =>
   call<T>(path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
 
 export async function login(email: string, password: string) {
-  const res = await fetch("/api/v1/auth/login", {
+  const res = await fetch(apiUrl("/auth/login"), {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ username: email, password }),

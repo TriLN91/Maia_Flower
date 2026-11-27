@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { useEffect } from "react";
 import { cartCount, useCart } from "../lib/cart";
+import { ServerWakeBanner } from "./ServerWakeBanner";
 
 export function Layout() {
   const count = cartCount(useCart());
@@ -11,6 +12,7 @@ export function Layout() {
 
   return (
     <div className="min-h-dvh pb-28 text-stone-800">
+      <ServerWakeBanner />
       <header className="sticky top-0 z-[1001] border-b border-rose-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-1.5 text-lg font-extrabold text-rose-700">

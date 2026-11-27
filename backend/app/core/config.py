@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     # Bật cổng thanh toán giả lập. Trống = bật khi không phải production.
     # Bản demo công khai đặt true (vẫn là production, chỉ là không có cổng thật).
     mock_gateway_enabled: bool | None = None
+    # URL của web khi web và API khác origin (vd. Static Site riêng trên Render).
+    # Có -> tự thêm vào CORS, trang kết quả thanh toán về web, `/` của API chuyển sang web.
+    frontend_url: str | None = None
     # Thư mục bản build frontend (Vite `dist`). Có = FastAPI phục vụ luôn web (1 dịch vụ).
     frontend_dist_dir: str | None = None
     # Bản demo công khai: cho phép seed khi production, tự nhập hàng mỗi sáng.
@@ -97,9 +100,16 @@ class Settings(BaseSettings):
         self.public_base_url = self.public_base_url.rstrip("/")
         if self.mock_gateway_enabled is None:
             self.mock_gateway_enabled = self.app_env != "production"
-        # Web và API cùng một origin -> cổng thanh toán trả khách về trang kết quả của web
-        if self.payment_return_url is None and self.frontend_dist_dir:
-            self.payment_return_url = f"{self.public_base_url}/payment-result"
+        if self.frontend_url:
+            self.frontend_url = self.frontend_url.rstrip("/")
+            if self.frontend_url not in self.cors_origins:
+                self.cors_origins = [*self.cors_origins, self.frontend_url]
+        # Cổng thanh toán trả khách về trang kết quả của web (web riêng hoặc cùng origin)
+        if self.payment_return_url is None:
+            if self.frontend_url:
+                self.payment_return_url = f"{self.frontend_url}/payment-result"
+            elif self.frontend_dist_dir:
+                self.payment_return_url = f"{self.public_base_url}/payment-result"
         return self
 
     @field_validator("cors_origins", mode="before")

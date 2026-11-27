@@ -3,7 +3,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
@@ -41,6 +41,12 @@ def create_app() -> FastAPI:
         app.include_router(mock_gateway_router)
     if settings.frontend_dist_dir:
         mount_frontend(app, Path(settings.frontend_dist_dir))
+    elif settings.frontend_url:
+        # API và web tách riêng: ai mở thẳng URL của API thì đưa sang web
+        @app.get("/", include_in_schema=False)
+        def to_frontend() -> RedirectResponse:
+            return RedirectResponse(settings.frontend_url, status_code=307)
+
     return app
 
 
