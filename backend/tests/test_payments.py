@@ -102,7 +102,7 @@ async def test_full_payment_flow_through_mock_gateway(client, paid_setup):
 
     page = await client.get(f"{gateway.path}?{gateway.query}")
     assert page.status_code == 200
-    assert f"{order['total']:,}đ" in page.text
+    assert f"{order['total']:,}đ".replace(",", ".") in page.text  # định dạng số kiểu VN
 
     form = {f"p_{k}": v for k, v in parse_qsl(gateway.query)} | {"outcome": "success"}
     done = await client.post("/mock-gateway/pay/complete", data=form)
