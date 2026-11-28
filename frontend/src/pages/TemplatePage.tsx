@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { api } from "../api/client";
 import { BouquetArt, flowerDot } from "../components/BouquetArt";
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ClockIcon, GiftIcon, LeafIcon, SparkleIcon, TruckIcon } from "../components/icons";
-import { BottomBar, Button, DiscountBadge, ErrorBox, Loading, Price, Stepper, TemplateCard } from "../components/ui";
+import { BottomBar, Button, DiscountBadge, ErrorBox, Price, Stepper, TemplateCard } from "../components/ui";
 import { cart } from "../lib/cart";
 import { earliestLabel, useEarliestSlot } from "../lib/delivery";
 import { friendlyError } from "../lib/errors";
@@ -37,7 +37,19 @@ export function TemplatePage() {
     setAdded(false);
   }, [slug]);
 
-  if (q.isPending) return <Loading />;
+  if (q.isPending)
+    return (
+      <div className="grid gap-6 lg:grid-cols-2 lg:gap-12" aria-busy="true" aria-label="Đang tải mẫu hoa">
+        <div className="-mx-4 aspect-square animate-pulse bg-paper sm:mx-0 sm:aspect-[4/5] sm:rounded-[2rem] lg:mt-12" />
+        <div className="space-y-4 lg:pt-12">
+          <div className="h-3 w-24 animate-pulse rounded bg-stone-200/70" />
+          <div className="h-10 w-2/3 animate-pulse rounded-xl bg-stone-200/70" />
+          <div className="h-7 w-40 animate-pulse rounded-xl bg-stone-200/70" />
+          <div className="h-4 w-full animate-pulse rounded bg-stone-200/70" />
+          <div className="h-24 w-full animate-pulse rounded-2xl bg-white" />
+        </div>
+      </div>
+    );
   if (q.error)
     return (
       <div className="mx-auto max-w-xl space-y-4">

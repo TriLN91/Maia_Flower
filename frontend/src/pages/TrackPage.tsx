@@ -4,9 +4,39 @@ import { Link, useParams } from "react-router";
 import { api } from "../api/client";
 import type { OrderStatus } from "../api/types";
 import { CheckIcon, ClockIcon, GiftIcon, PinIcon, UserIcon } from "../components/icons";
+import { OrderItems } from "../components/OrderItems";
 import { Button, ErrorBox, Loading } from "../components/ui";
 import { friendlyError } from "../lib/errors";
 import { STATUS, dateTime, money, timeRange } from "../lib/format";
+
+const MESSAGE: Partial<Record<OrderStatus, string>> = {
+  paid: "Shop đã nhận đơn. Thợ sẽ bắt đầu bó hoa trước giờ giao.",
+  preparing: "Thợ đang chọn những cành tươi nhất và bó hoa cho bạn.",
+  delivering: "Bó hoa đang trên đường tới nơi nhận.",
+  completed: "Hoa đã được giao. Cảm ơn bạn đã chọn Maia!",
+};
+
+function CopyLink() {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 2000);
+        } catch {
+          /* trình duyệt chặn clipboard: bỏ qua */
+        }
+      }}
+      className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-medium text-stone-700 ring-1 ring-stone-200 hover:ring-stone-300"
+    >
+      {copied ? <CheckIcon className="size-4 text-sage-700" /> : null}
+      {copied ? "Đã sao chép link" : "Sao chép link theo dõi"}
+    </button>
+  );
+}
 
 const FLOW: OrderStatus[] = ["paid", "preparing", "delivering", "completed"];
 const FINAL: OrderStatus[] = ["completed", "cancelled", "expired", "needs_refund"];
@@ -68,6 +98,10 @@ export function TrackPage() {
           <p className="text-sm text-stone-500">Đặt lúc {dateTime(o.created_at)}</p>
         </div>
         <span className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${status.tone}`}>{status.label}</span>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {MESSAGE[o.status] ? <p className="text-sm text-stone-600">{MESSAGE[o.status]}</p> : <span />}
+        <CopyLink />
       </div>
 
       {o.status === "pending_payment" && o.hold_expires_at && (
@@ -154,25 +188,9 @@ export function TrackPage() {
         )}
       </section>
 
-      <dl className="space-y-2 rounded-3xl bg-white p-5 text-sm ring-1 ring-stone-200/70">
-        {o.items.map((i) => (
-          <div key={i.template_id} className="flex justify-between gap-3">
-            <dt>
-              {i.template_name} × {i.quantity}
-              {i.discount_pct > 0 && <span className="ml-1.5 text-xs font-semibold text-brand-700">−{i.discount_pct}%</span>}
-            </dt>
-            <dd className="tabular-nums">{money(i.line_total)}</dd>
-          </div>
-        ))}
-        <div className="flex justify-between">
-          <dt className="text-stone-500">Phí giao hàng</dt>
-          <dd className="tabular-nums">{o.delivery_fee ? money(o.delivery_fee) : "Miễn phí"}</dd>
-        </div>
-        <div className="flex justify-between border-t border-stone-100 pt-3 text-base font-bold">
-          <dt>Tổng</dt>
-          <dd className="tabular-nums">{money(o.total)}</dd>
-        </div>
-      </dl>
+      <section className="rounded-3xl bg-white p-5 ring-1 ring-stone-200/70">
+        <OrderItems order={o} />
+      </section>
 
       <Link to="/" className="block py-2 text-center font-semibold text-brand-700">
         Tiếp tục mua hoa →

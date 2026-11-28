@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router";
 import { ApiError, api } from "../api/client";
 import { AddressMap, type LatLng } from "../components/AddressMap";
 import { BouquetArt } from "../components/BouquetArt";
-import { BagIcon, ShieldIcon } from "../components/icons";
+import { BagIcon, GiftIcon, ShieldIcon } from "../components/icons";
 import { BottomBar, Button, Empty, ErrorBox, Loading } from "../components/ui";
 import { cart, useCart } from "../lib/cart";
 import { friendlyError } from "../lib/errors";
@@ -242,7 +242,7 @@ export function CheckoutPage() {
         </div>
         {slots.isPending && <Loading text="Đang xem khung giờ…" />}
         {slots.data && (
-          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Khung giờ">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Khung giờ">
             {slots.data.map((s) => (
               <button
                 type="button"
@@ -286,12 +286,20 @@ export function CheckoutPage() {
             placeholder="09xx xxx xxx"
           />
         </Field>
-        <label className="flex min-h-11 items-center gap-3">
+        <label
+          className={`flex cursor-pointer items-center gap-3 rounded-2xl p-3.5 ring-1 transition ${gift ? "bg-brand-50/60 ring-brand-300" : "ring-stone-200 hover:ring-stone-300"}`}
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+            <GiftIcon />
+          </span>
+          <span className="flex-1">
+            <span className="block font-semibold text-ink">Gửi tặng người khác</span>
+            <span className="block text-xs text-stone-500">Thêm người nhận và lời nhắn viết tay trên thiệp</span>
+          </span>
           <input type="checkbox" checked={gift} onChange={(e) => setGift(e.target.checked)} className="size-5 accent-brand-700" />
-          <span>Tặng người khác</span>
         </label>
         {gift && (
-          <div className="space-y-3 rounded-2xl bg-brand-50/60 p-4">
+          <div className="space-y-3 rounded-2xl bg-brand-50/40 p-4">
             <Field label="Tên người nhận">
               <input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} className={inputCls} />
             </Field>

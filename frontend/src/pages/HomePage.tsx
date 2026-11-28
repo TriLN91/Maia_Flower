@@ -83,7 +83,7 @@ function Hero({ featured }: { featured?: Template }) {
         </p>
       </div>
 
-      <div className="relative mx-auto w-full max-w-[17rem] sm:max-w-sm">
+      <div className="relative mx-auto w-full max-w-[14rem] sm:max-w-sm">
         <div className="absolute -inset-6 rounded-full bg-brand-100/60 blur-2xl" aria-hidden />
         {featured ? (
           <Link

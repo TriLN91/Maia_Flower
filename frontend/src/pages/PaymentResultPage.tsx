@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { api } from "../api/client";
-import { CheckIcon, ClockIcon } from "../components/icons";
+import { CheckIcon, ClockIcon, PinIcon } from "../components/icons";
+import { OrderItems } from "../components/OrderItems";
 import { ErrorBox, Loading } from "../components/ui";
 import { friendlyError } from "../lib/errors";
+import { timeRange } from "../lib/format";
 import { tokenForCode } from "../lib/orders";
 
 /** Cổng thanh toán redirect về đây kèm tham số đã ký. Trang chỉ HIỂN THỊ: trạng thái thật do
@@ -21,12 +23,18 @@ export function PaymentResultPage() {
         : false,
   });
 
+  const token = result.data ? tokenForCode(result.data.order_code) : undefined;
+  const order = useQuery({
+    queryKey: ["order", token],
+    queryFn: () => api.track(token!),
+    enabled: !!token,
+  });
+
   if (result.isPending) return <Loading text="Đang xác nhận thanh toán…" />;
   if (result.error) return <ErrorBox message={friendlyError(result.error)} />;
 
   const r = result.data;
   const ok = r.order_status === "paid";
-  const token = tokenForCode(r.order_code);
 
   return (
     <div className="mx-auto max-w-md space-y-5 py-10 text-center">
@@ -57,6 +65,30 @@ export function PaymentResultPage() {
           </Link>
         )}
       </div>
+
+      {order.data && (
+        <section className="space-y-4 rounded-3xl bg-white p-5 text-left ring-1 ring-stone-200/70">
+          <div className="space-y-2 text-sm">
+            <p className="flex gap-3">
+              <ClockIcon className="text-sage-700" />
+              <span>
+                <span className="block text-xs text-stone-500">Giao lúc</span>
+                <b className="text-ink">{timeRange(order.data.delivery_starts_at, order.data.delivery_ends_at)}</b>
+              </span>
+            </p>
+            <p className="flex gap-3">
+              <PinIcon className="text-sage-700" />
+              <span>
+                <span className="block text-xs text-stone-500">Giao tới</span>
+                {order.data.delivery_address}
+              </span>
+            </p>
+          </div>
+          <div className="border-t border-stone-100 pt-4">
+            <OrderItems order={order.data} />
+          </div>
+        </section>
+      )}
     </div>
   );
 }
