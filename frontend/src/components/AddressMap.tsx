@@ -9,16 +9,18 @@ export interface LatLng {
   lng: number;
 }
 
-// Icon bằng emoji: tránh lỗi đường dẫn ảnh marker mặc định của Leaflet khi đóng gói bằng Vite
+// Icon SVG nội tuyến: tránh lỗi đường dẫn ảnh marker mặc định của Leaflet khi đóng gói bằng Vite
 const pin = L.divIcon({
-  html: '<div style="font-size:34px;line-height:34px;transform:translate(-4px,-30px)">📍</div>',
+  html: '<svg width="34" height="42" viewBox="0 0 34 42" style="display:block;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25))"><path d="M17 41S3 26.5 3 16a14 14 0 0 1 28 0c0 10.5-14 25-14 25Z" fill="#7a2b3e" stroke="#fff" stroke-width="2"/><circle cx="17" cy="16" r="5" fill="#fff"/></svg>',
   className: "",
-  iconSize: [34, 34],
+  iconSize: [34, 42],
+  iconAnchor: [17, 41],
 });
 const shopIcon = L.divIcon({
-  html: '<div style="font-size:26px;line-height:26px;transform:translate(-2px,-20px)">🌸</div>',
+  html: '<div style="width:30px;height:30px;border-radius:50%;background:#4e6446;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;box-sizing:border-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15"/><path d="M5 19 13 11"/></svg></div>',
   className: "",
-  iconSize: [26, 26],
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
 });
 
 function ClickToPin({ onPick }: { onPick: (p: LatLng) => void }) {
@@ -117,14 +119,14 @@ export function AddressMap({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="text-stone-500">
-          {value ? "Kéo ghim 📍 để chỉnh vị trí." : "Chạm vào bản đồ để ghim nơi nhận hoa."}
+          {value ? "Kéo ghim đỏ để chỉnh vị trí. Chấm xanh là cửa hàng." : "Chạm vào bản đồ để ghim nơi nhận hoa."}
         </span>
         <button
           type="button"
           onClick={useMyLocation}
           className="min-h-11 rounded-xl px-3 font-semibold text-brand-700 hover:bg-brand-50"
         >
-          {locating ? "Đang định vị…" : "📡 Dùng vị trí của tôi"}
+          {locating ? "Đang định vị…" : "Dùng vị trí của tôi"}
         </button>
       </div>
       {geoError && <p className="text-sm text-amber-700">{geoError}</p>}

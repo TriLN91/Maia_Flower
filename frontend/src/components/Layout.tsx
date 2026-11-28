@@ -1,7 +1,8 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { toast, useToast } from "../lib/toast";
 import { useEffect } from "react";
 import { cartCount, useCart } from "../lib/cart";
-import { BagIcon, LeafIcon, ReceiptIcon } from "./icons";
+import { BagIcon, CheckIcon, LeafIcon, ReceiptIcon } from "./icons";
 import { ServerWakeBanner } from "./ServerWakeBanner";
 
 export function Logo({ light }: { light?: boolean }) {
@@ -28,6 +29,35 @@ export function Logo({ light }: { light?: boolean }) {
 
 const navCls = ({ isActive }: { isActive: boolean }) =>
   `rounded-full px-3.5 py-2 text-sm font-medium transition ${isActive ? "bg-brand-50 text-brand-800" : "text-stone-600 hover:text-brand-700"}`;
+
+function Toaster() {
+  const t = useToast();
+  const { pathname } = useLocation();
+  if (!t) return null;
+  return (
+    <div
+      role="status"
+      key={t.id}
+      className="pb-safe fixed inset-x-0 bottom-24 z-[1002] flex justify-center px-4 lg:bottom-6"
+    >
+      <div className="flex w-full max-w-sm animate-fade-up items-center gap-3 rounded-2xl bg-ink py-2.5 pl-4 pr-2 text-sm text-white shadow-2xl">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-sage-500">
+          <CheckIcon className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1 truncate">{t.text}</span>
+        {pathname !== "/gio-hang" && (
+          <Link
+            to="/gio-hang"
+            onClick={() => toast.hide()}
+            className="shrink-0 rounded-xl px-3 py-2 font-semibold text-brand-200 hover:bg-white/10"
+          >
+            Xem giỏ
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function Layout() {
   const count = cartCount(useCart());
@@ -73,16 +103,18 @@ export function Layout() {
               className="relative flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-stone-700 hover:bg-white"
               aria-label={`Giỏ hàng, ${count} bó`}
             >
-              <BagIcon />
-              <span className="hidden sm:inline">Giỏ hàng</span>
-              {count > 0 && (
-                <span
-                  key={count}
-                  className="absolute left-6 top-1 min-w-5 animate-fade-up rounded-full bg-brand-700 px-1 text-center text-[11px] font-bold leading-5 text-white ring-2 ring-cream"
-                >
-                  {count}
-                </span>
-              )}
+              <span className="relative">
+                <BagIcon />
+                {count > 0 && (
+                  <span
+                    key={count}
+                    className="absolute -right-2.5 -top-2 min-w-[18px] animate-fade-up rounded-full bg-brand-700 px-1 text-center text-[10px] font-bold leading-[18px] text-white ring-2 ring-cream"
+                  >
+                    {count}
+                  </span>
+                )}
+              </span>
+              <span className="ml-1 hidden sm:inline">Giỏ hàng</span>
             </NavLink>
           </div>
         </div>
@@ -91,6 +123,8 @@ export function Layout() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
         <Outlet />
       </main>
+
+      <Toaster />
 
       <footer className="mt-16 bg-ink text-stone-300">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">

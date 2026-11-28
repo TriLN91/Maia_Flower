@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { api } from "../api/client";
 import type { Template } from "../api/types";
@@ -57,16 +57,16 @@ function Hero({ featured }: { featured?: Template }) {
           Chọn một mẫu, thợ Maia cắm ngay từ những cành tươi nhất trong kho và giao đúng khung giờ
           bạn hẹn.
         </p>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:flex">
           <a
             href="#cua-hang"
-            className="inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-700 px-6 font-semibold text-white shadow-sm hover:bg-brand-800"
+            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-brand-700 px-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-800 sm:px-6 sm:text-base"
           >
             Chọn mẫu hoa <ArrowRightIcon className="size-4" />
           </a>
           <a
             href="#uu-dai"
-            className="inline-flex min-h-12 items-center rounded-full bg-white px-6 font-semibold text-brand-800 ring-1 ring-brand-200 hover:bg-brand-50"
+            className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-full bg-white px-3 text-sm font-semibold text-brand-800 ring-1 ring-brand-200 hover:bg-brand-50 sm:px-6 sm:text-base"
           >
             Ưu đãi hôm nay
           </a>
@@ -83,7 +83,7 @@ function Hero({ featured }: { featured?: Template }) {
         </p>
       </div>
 
-      <div className="relative mx-auto w-full max-w-sm">
+      <div className="relative mx-auto w-full max-w-[17rem] sm:max-w-sm">
         <div className="absolute -inset-6 rounded-full bg-brand-100/60 blur-2xl" aria-hidden />
         {featured ? (
           <Link
@@ -150,6 +150,13 @@ export function HomePage() {
   const all = useQuery({ queryKey: ["templates", sort], queryFn: () => api.templates(sort) });
 
   const items = all.data?.items ?? [];
+  const loaded = !!all.data && !!fresh.data;
+  useEffect(() => {
+    // Vào bằng link "/#uu-dai", "/#cua-hang": cuộn tới mục đó khi dữ liệu đã hiện
+    if (loaded && window.location.hash) {
+      document.getElementById(window.location.hash.slice(1))?.scrollIntoView();
+    }
+  }, [loaded]);
   const colors = useMemo(() => {
     const m = new Map<string, Template>();
     for (const t of items) if (!m.has(mainColor(t))) m.set(mainColor(t), t);

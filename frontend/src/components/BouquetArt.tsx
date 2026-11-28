@@ -285,17 +285,20 @@ function compose(template: Template) {
   const cx = 100;
   const cy = 92;
   const area = main.reduce((s, b) => s + (BLOOM_SIZE[b.kind] ?? 11) ** 2, 0);
-  const R = Math.min(60, Math.max(16, Math.sqrt(area) * 0.95));
+  const natural = Math.max(12, Math.sqrt(area) * 0.95);
+  // Bó ít bông thì phóng to bông lên để cụm hoa luôn tròn đầy, cân với giấy gói
+  const R = Math.min(58, Math.max(44, natural));
+  const grow = Math.min(1.7, Math.max(1, R / natural));
   const placed: Placed[] = main.map((b, i) => {
     // Xếp kiểu hoa hướng dương (phyllotaxis): đều, tròn đầy như bó hoa thật
     const t = main.length === 1 ? 0 : Math.sqrt((i + 0.5) / main.length);
     const a = i * 2.39996 + rand() * 0.3;
-    const r = (BLOOM_SIZE[b.kind] ?? 11) * (0.92 + rand() * 0.16);
+    const r = (BLOOM_SIZE[b.kind] ?? 11) * grow * (0.92 + rand() * 0.16);
     return {
       ...b,
       r,
-      x: cx + Math.cos(a) * R * t * 0.92,
-      y: cy + Math.sin(a) * R * t * 0.78,
+      x: cx + Math.cos(a) * (R - r * 0.5) * t,
+      y: cy + Math.sin(a) * (R - r * 0.5) * t * 0.8,
       rot: rand() * 360,
     };
   });
@@ -313,11 +316,11 @@ function Art({ template }: { template: Template }) {
 
   // Lá: các cành toả ra phía sau cụm hoa
   const leafEls: ReactElement[] = [];
-  const nLeaves = greens.length ? 7 + greens.length * 2 : 3;
+  const nLeaves = greens.length ? 7 + greens.length * 2 : 6;
   for (let i = 0; i < nLeaves; i++) {
     const kind = greens.length ? greens[i % greens.length] : "leaf";
     const a = Math.PI * (1.05 + (i / (nLeaves - 1 || 1)) * 0.9) + (rand() - 0.5) * 0.25;
-    const len = R + 16 + rand() * 12;
+    const len = R + 14 + rand() * 10;
     const ex = cx + Math.cos(a) * len;
     const ey = cy + 6 + Math.sin(a) * len * 0.9;
     const green = kind === "eucalyptus" ? "#8aa596" : "#5f8a4e";
@@ -330,9 +333,15 @@ function Art({ template }: { template: Template }) {
       for (const side of [-1, 1]) {
         leaves.push(
           kind === "eucalyptus" ? (
-            <circle key={`${k}${side}`} cx={lx + Math.cos(a + side * 1.4) * 4} cy={ly + Math.sin(a + side * 1.4) * 4} r={3.6} fill={green} stroke="rgba(0,0,0,.08)" strokeWidth={0.4} />
+            <circle key={`${k}${side}`} cx={lx + Math.cos(a + side * 1.4) * 4.2} cy={ly + Math.sin(a + side * 1.4) * 4.2} r={3.9} fill={green} stroke="rgba(0,0,0,.08)" strokeWidth={0.4} />
           ) : (
-            <ellipse key={`${k}${side}`} cx={lx} cy={ly} rx={2.6} ry={6.5} fill={green} transform={`rotate(${deg + 90 + side * 50} ${lx} ${ly}) translate(0 ${-side * 4})`} />
+            // Lá nhọn mọc chếch hai bên cành
+            <path
+              key={`${k}${side}`}
+              d="M0 0 Q3.4 -5.5 0 -12 Q-3.4 -5.5 0 0Z"
+              fill={side > 0 ? green : "#6f9a5c"}
+              transform={`translate(${lx} ${ly}) rotate(${deg + 90 + side * 42})`}
+            />
           ),
         );
       }
@@ -351,7 +360,7 @@ function Art({ template }: { template: Template }) {
     const groups = Math.min(9, 3 + s.n);
     for (let g = 0; g < groups; g++) {
       const a = Math.PI * 2 * (g / groups) + si * 0.6 + rand() * 0.4;
-      const d = R * (0.75 + rand() * 0.35);
+      const d = R * (0.8 + rand() * 0.3);
       const gx = cx + Math.cos(a) * d;
       const gy = cy + Math.sin(a) * d * 0.8;
       for (let k = 0; k < 6; k++) {

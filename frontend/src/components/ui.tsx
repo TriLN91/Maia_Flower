@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import type { Template } from "../api/types";
 import { cart } from "../lib/cart";
 import { money } from "../lib/format";
+import { toast } from "../lib/toast";
 import { BouquetArt, flowerDot } from "./BouquetArt";
 import { CheckIcon, PlusIcon } from "./icons";
 
@@ -163,6 +164,7 @@ export function TemplateCard({ template }: { template: Template }) {
             type="button"
             onClick={() => {
               cart.add(template.id, 1);
+              toast.show(`Đã thêm 1 bó ${template.name} vào giỏ`);
               setAdded(true);
               window.setTimeout(() => setAdded(false), 1600);
             }}

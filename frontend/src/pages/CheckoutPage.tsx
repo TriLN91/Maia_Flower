@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { ApiError, api } from "../api/client";
 import { AddressMap, type LatLng } from "../components/AddressMap";
+import { BouquetArt } from "../components/BouquetArt";
+import { BagIcon, ShieldIcon } from "../components/icons";
 import { BottomBar, Button, Empty, ErrorBox, Loading } from "../components/ui";
 import { cart, useCart } from "../lib/cart";
 import { friendlyError } from "../lib/errors";
@@ -51,6 +53,8 @@ export function CheckoutPage() {
   const lines = useCart();
   const navigate = useNavigate();
   const shop = useQuery({ queryKey: ["shop-info"], queryFn: api.shopInfo, staleTime: 300_000 });
+  const catalog = useQuery({ queryKey: ["templates", "name"], queryFn: () => api.templates("name") });
+  const byId = new Map((catalog.data?.items ?? []).map((x) => [x.id, x]));
 
   const [pos, setPos] = useState<LatLng | null>(null);
   const [address, setAddress] = useState("");
@@ -156,7 +160,7 @@ export function CheckoutPage() {
 
   if (lines.length === 0 && !placeOrder.isPending)
     return (
-      <Empty icon="🧺" title="Giỏ hàng đang trống">
+      <Empty icon={<BagIcon className="size-9" />} title="Giỏ hàng đang trống">
         <Link to="/" className="font-semibold text-brand-700">
           Chọn một bó hoa →
         </Link>
@@ -170,7 +174,7 @@ export function CheckoutPage() {
 
   return (
     <form
-      className="mx-auto max-w-2xl space-y-4"
+      className="mx-auto max-w-2xl space-y-4 lg:max-w-6xl"
       onSubmit={(e) => {
         e.preventDefault();
         setTouched(true);
@@ -190,6 +194,8 @@ export function CheckoutPage() {
         <h1 className="font-display text-3xl font-semibold text-ink sm:text-4xl">Đặt hàng</h1>
       </div>
 
+      <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8 lg:space-y-0">
+      <div className="space-y-4">
       <Step n={1} title="Giao tới đâu?">
         <AddressMap
           shop={shop.data}
@@ -307,38 +313,65 @@ export function CheckoutPage() {
         </Field>
       </Step>
 
-      {t && (
-        <dl className="space-y-2 rounded-3xl bg-white p-5 text-sm ring-1 ring-stone-200/70">
-          <dt className="pb-1 font-display text-xl font-semibold text-ink">Đơn hàng của bạn</dt>
-          {t.lines.map((l) => (
-            <div key={l.template_id} className="flex justify-between">
-              <dt>
-                {l.name} × {l.quantity}
-              </dt>
-              <dd className="tabular-nums">{money(l.line_total)}</dd>
-            </div>
-          ))}
-          {t.discount_total > 0 && (
-            <div className="flex justify-between text-brand-700">
-              <dt>Đã gồm ưu đãi hoa tươi</dt>
-              <dd className="tabular-nums">−{money(t.discount_total)}</dd>
-            </div>
+      </div>
+
+      <aside className="space-y-4 lg:sticky lg:top-24">
+        <section className="space-y-4 rounded-3xl bg-white p-5 text-sm ring-1 ring-stone-200/70">
+          <h2 className="font-display text-xl font-semibold text-ink">Đơn hàng của bạn</h2>
+          {!t && <Loading text="Đang tính giá…" />}
+          {t && (
+            <>
+              <ul className="space-y-3">
+                {t.lines.map((l) => {
+                  const tpl = byId.get(l.template_id);
+                  return (
+                    <li key={l.template_id} className="flex items-center gap-3">
+                      <span className="relative w-12 shrink-0 overflow-hidden rounded-xl bg-paper">
+                        {tpl ? <BouquetArt template={tpl} /> : <span className="block aspect-[4/5]" />}
+                        <span className="absolute -right-0.5 -top-0.5 min-w-5 rounded-full bg-ink px-1 text-center text-[11px] font-bold leading-5 text-white">
+                          {l.quantity}
+                        </span>
+                      </span>
+                      <span className="min-w-0 flex-1 font-medium text-ink">{l.name}</span>
+                      <span className="tabular-nums">{money(l.line_total)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <dl className="space-y-2 border-t border-stone-100 pt-3">
+                {t.discount_total > 0 && (
+                  <div className="flex justify-between text-brand-700">
+                    <dt>Đã gồm ưu đãi hoa tươi</dt>
+                    <dd className="tabular-nums">−{money(t.discount_total)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <dt className="text-stone-500">Phí giao hàng</dt>
+                  <dd className="tabular-nums">
+                    {t.delivery_fee == null ? "Ghim địa chỉ để tính" : t.delivery_fee === 0 ? "Miễn phí" : money(t.delivery_fee)}
+                  </dd>
+                </div>
+                <div className="flex justify-between border-t border-stone-100 pt-3 text-base font-bold">
+                  <dt>Tổng thanh toán</dt>
+                  <dd className="tabular-nums">{t.delivery_fee != null ? money(t.total) : "—"}</dd>
+                </div>
+              </dl>
+            </>
           )}
-          <div className="flex justify-between">
-            <dt>Phí giao hàng</dt>
-            <dd className="tabular-nums">
-              {t.delivery_fee == null ? "—" : t.delivery_fee === 0 ? "Miễn phí" : money(t.delivery_fee)}
-            </dd>
-          </div>
-        </dl>
-      )}
+          <Button type="submit" className="hidden w-full lg:flex" loading={placeOrder.isPending} disabled={touched && !valid}>
+            Đặt & thanh toán
+          </Button>
+        </section>
 
-      {placeOrder.error && <ErrorBox message={friendlyError(placeOrder.error)} />}
-      <p className="text-center text-xs text-stone-500">
-        Sau khi đặt, shop giữ hoa và khung giờ cho bạn trong {shop.data.hold_minutes} phút để thanh toán.
-      </p>
+        {placeOrder.error && <ErrorBox message={friendlyError(placeOrder.error)} />}
+        <p className="flex items-start justify-center gap-2 text-center text-xs text-stone-500">
+          <ShieldIcon className="size-4 text-sage-700" />
+          Sau khi đặt, shop giữ hoa và khung giờ cho bạn trong {shop.data.hold_minutes} phút để thanh toán.
+        </p>
+      </aside>
+      </div>
 
-      <BottomBar>
+      <BottomBar desktopHidden>
         <div className="flex-1">
           <p className="text-xs text-stone-500">Tổng thanh toán</p>
           <p className="text-lg font-bold tabular-nums">

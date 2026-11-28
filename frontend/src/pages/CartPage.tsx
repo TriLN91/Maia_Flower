@@ -87,7 +87,7 @@ export function CartPage() {
       {quote.error && <ErrorBox message={friendlyError(quote.error)} onRetry={() => quote.refetch()} />}
 
       {q && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           <ul className="space-y-3">
             {q.lines.map((l) => {
               const t = byId.get(l.template_id);
