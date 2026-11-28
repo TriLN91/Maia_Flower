@@ -41,7 +41,7 @@ function TemplateDetail({ t, owner }: { t: AdminTemplate; owner: boolean }) {
           </label>
           <Button loading={save.isPending} disabled={price === t.price} onClick={() => save.mutate({ price })}>Lưu giá</Button>
           <label className="flex min-h-11 items-center gap-2">
-            <input type="checkbox" checked={t.discount_locked} onChange={(e) => save.mutate({ discount_locked: e.target.checked })} className="size-5 accent-rose-600" />
+            <input type="checkbox" checked={t.discount_locked} onChange={(e) => save.mutate({ discount_locked: e.target.checked })} className="size-5 accent-brand-600" />
             Không áp giảm giá động
           </label>
         </div>
@@ -116,7 +116,7 @@ export function PricingPage() {
                     <td className="py-2 font-medium">{u.name}</td>
                     <td className="tabular-nums">{u.expiring_qty}</td>
                     <td className="tabular-nums">{u.expected_demand}</td>
-                    <td className={`tabular-nums ${u.surplus ? "font-bold text-rose-700" : "text-stone-400"}`}>{u.surplus || "—"}</td>
+                    <td className={`tabular-nums ${u.surplus ? "font-bold text-brand-700" : "text-stone-400"}`}>{u.surplus || "—"}</td>
                     <td><FreshnessBar value={u.avg_freshness} /></td>
                     <td className="tabular-nums">{u.discount_pct ? `${u.discount_pct}%` : "—"}</td>
                   </tr>
@@ -138,7 +138,7 @@ export function PricingPage() {
                   {t.discount_locked && <span className="ml-2 text-xs text-stone-400">🔒</span>}
                 </span>
                 <span className="flex items-center gap-2 tabular-nums">
-                  {t.current_discount_pct > 0 && <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-700">−{t.current_discount_pct}%</span>}
+                  {t.current_discount_pct > 0 && <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-700">−{t.current_discount_pct}%</span>}
                   {money(t.price)}
                 </span>
               </button>

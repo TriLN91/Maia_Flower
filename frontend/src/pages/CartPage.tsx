@@ -7,6 +7,7 @@ import { ArrowRightIcon, BagIcon, ShieldIcon, TrashIcon, TruckIcon } from "../co
 import { BottomBar, Button, Empty, ErrorBox, Loading, Stepper } from "../components/ui";
 import { cart, useCart } from "../lib/cart";
 import { friendlyError } from "../lib/errors";
+import { useTitle } from "../lib/title";
 import { money } from "../lib/format";
 
 /** Thanh tiến độ "còn X nữa để được miễn phí ship" — một mẫu tăng giá trị đơn rất phổ biến. */
@@ -38,6 +39,7 @@ function FreeShipProgress({ subtotal }: { subtotal: number }) {
 }
 
 export function CartPage() {
+  useTitle("Giỏ hàng");
   const lines = useCart();
   const navigate = useNavigate();
   const quote = useQuery({

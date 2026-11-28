@@ -8,6 +8,7 @@ import { ArrowRightIcon, ClockIcon, LeafIcon, ShieldIcon, SparkleIcon, TruckIcon
 import { CardSkeleton, Empty, ErrorBox, Section, TemplateCard } from "../components/ui";
 import { earliestLabel, useEarliestSlot } from "../lib/delivery";
 import { friendlyError } from "../lib/errors";
+import { useTitle } from "../lib/title";
 import { money } from "../lib/format";
 
 const SORTS = [
@@ -40,7 +41,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
-function Hero({ featured }: { featured?: Template }) {
+function Hero({ featured, side = [] }: { featured?: Template; side?: Template[] }) {
   const earliest = useEarliestSlot();
   return (
     <section className="relative grid items-center gap-8 overflow-hidden rounded-[2rem] bg-paper px-5 py-8 sm:px-10 sm:py-10 lg:grid-cols-[1.1fr_1fr] lg:py-14">
@@ -85,6 +86,16 @@ function Hero({ featured }: { featured?: Template }) {
 
       <div className="relative mx-auto w-full max-w-[14rem] sm:max-w-sm">
         <div className="absolute -inset-6 rounded-full bg-brand-100/60 blur-2xl" aria-hidden />
+        {/* Hai bó phía sau, nghiêng nhẹ — chỉ trên màn hình rộng, tạo chiều sâu cho phần đầu trang */}
+        {side.slice(0, 2).map((t, i) => (
+          <div
+            key={t.id}
+            aria-hidden
+            className={`absolute top-10 hidden w-[62%] overflow-hidden rounded-[1.5rem] opacity-90 shadow-xl shadow-brand-900/10 ring-1 ring-white lg:block ${i === 0 ? "-left-14 -rotate-[8deg]" : "-right-14 rotate-[8deg]"}`}
+          >
+            <BouquetArt template={t} />
+          </div>
+        ))}
         {featured ? (
           <Link
             to={`/mau/${featured.slug}`}
@@ -143,6 +154,7 @@ const STEPS = [
 ];
 
 export function HomePage() {
+  useTitle(null);
   const [sort, setSort] = useState("name");
   const [color, setColor] = useState<string>("all");
   const [range, setRange] = useState("all");
@@ -167,11 +179,12 @@ export function HomePage() {
     (t) => (color === "all" || mainColor(t) === color) && test(t.final_price ?? t.price),
   );
   const featured = fresh.data?.[0] ?? items[0];
+  const side = items.filter((t) => t.id !== featured?.id && mainColor(t) !== mainColor(featured ?? t)).slice(0, 2);
 
   return (
     <div className="space-y-14 sm:space-y-20">
       <div className="space-y-4">
-        <Hero featured={featured} />
+        <Hero featured={featured} side={side} />
         <Promises />
       </div>
 

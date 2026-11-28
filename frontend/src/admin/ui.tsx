@@ -40,7 +40,7 @@ export function FreshnessBar({ value }: { value: number | null }) {
 }
 
 export const inputCls =
-  "min-h-11 w-full rounded-xl border-0 bg-white px-3 ring-1 ring-stone-200 focus:ring-2 focus:ring-rose-400";
+  "min-h-11 w-full rounded-xl border-0 bg-white px-3 ring-1 ring-stone-200 focus:ring-2 focus:ring-brand-400";
 
 export function PageTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (

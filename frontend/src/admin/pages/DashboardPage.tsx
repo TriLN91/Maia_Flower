@@ -41,7 +41,7 @@ export function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card title="Việc hôm nay theo khung giờ" action={<Link to="/admin/don-hang" className="text-sm font-semibold text-rose-700">Tất cả →</Link>}>
+        <Card title="Việc hôm nay theo khung giờ" action={<Link to="/admin/don-hang" className="text-sm font-semibold text-brand-700">Tất cả →</Link>}>
           {todo.length === 0 && <p className="text-sm text-stone-500">Không còn đơn nào cần xử lý hôm nay 🎉</p>}
           <div className="space-y-3">
             {[...bySlot.entries()].sort().map(([slot, items]) => (
@@ -63,7 +63,7 @@ export function DashboardPage() {
         </Card>
 
         <div className="space-y-4">
-          <Card title="🔥 Cần bán gấp" action={<Link to="/admin/gia" className="text-sm font-semibold text-rose-700">Chi tiết →</Link>}>
+          <Card title="🔥 Cần bán gấp" action={<Link to="/admin/gia" className="text-sm font-semibold text-brand-700">Chi tiết →</Link>}>
             {hot.length === 0 ? <p className="text-sm text-stone-500">Không loại hoa nào dư thừa sắp hết hạn.</p> : (
               <ul className="space-y-1 text-sm">
                 {hot.map((u) => (
@@ -75,7 +75,7 @@ export function DashboardPage() {
               </ul>
             )}
           </Card>
-          <Card title="Lô cần xem xét" action={<Link to="/admin/kho" className="text-sm font-semibold text-rose-700">Kho →</Link>}>
+          <Card title="Lô cần xem xét" action={<Link to="/admin/kho" className="text-sm font-semibold text-brand-700">Kho →</Link>}>
             {review.data?.length ? (
               <ul className="space-y-1 text-sm">
                 {review.data.map((b) => (

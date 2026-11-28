@@ -8,6 +8,7 @@ import { BottomBar, Button, DiscountBadge, ErrorBox, Price, Stepper, TemplateCar
 import { cart } from "../lib/cart";
 import { earliestLabel, useEarliestSlot } from "../lib/delivery";
 import { friendlyError } from "../lib/errors";
+import { useTitle } from "../lib/title";
 import { money } from "../lib/format";
 
 function Details({ title, icon, children, open }: { title: string; icon: ReactNode; children: ReactNode; open?: boolean }) {
@@ -31,6 +32,7 @@ export function TemplatePage() {
   const q = useQuery({ queryKey: ["template", slug], queryFn: () => api.template(slug) });
   const others = useQuery({ queryKey: ["templates", "name"], queryFn: () => api.templates("name") });
   const earliest = useEarliestSlot();
+  useTitle(q.data?.name);
   useEffect(() => {
     // Bấm sang mẫu khác (mục "Có thể bạn cũng thích") -> làm mới lựa chọn
     setQty(1);

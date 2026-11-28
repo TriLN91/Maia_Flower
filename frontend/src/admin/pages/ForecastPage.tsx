@@ -101,7 +101,7 @@ export function ForecastPage() {
               <select value={flowerId ?? ""} onChange={(e) => setFlowerId(+e.target.value)} className={`${inputCls} w-auto`} aria-label="Loại hoa">
                 {forecast.data.map((x) => <option key={x.flower_type_id} value={x.flower_type_id}>{x.name}</option>)}
               </select>
-              <button onClick={() => setAsTable((v) => !v)} className="min-h-11 rounded-xl px-3 text-sm font-semibold text-rose-700 hover:bg-rose-50">
+              <button onClick={() => setAsTable((v) => !v)} className="min-h-11 rounded-xl px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">
                 {asTable ? "Biểu đồ" : "Bảng"}
               </button>
             </div>
@@ -160,7 +160,7 @@ export function ForecastPage() {
               { label: "TB 14 ngày", s: backtest.data.moving_avg_14 },
               { label: "Cùng thứ tuần trước", s: backtest.data.naive_last_week },
             ].map((x) => (
-              <div key={x.label} className={`rounded-xl p-3 ${x.strong ? "bg-rose-50" : "bg-stone-50"}`}>
+              <div key={x.label} className={`rounded-xl p-3 ${x.strong ? "bg-brand-50" : "bg-stone-50"}`}>
                 <p className="text-xs text-stone-500">{x.label}</p>
                 <p className="text-xl font-extrabold tabular-nums">{x.s.wape?.toFixed(1)}%</p>
                 <p className="text-xs text-stone-500">WAPE</p>

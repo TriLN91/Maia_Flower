@@ -125,7 +125,7 @@ export function InventoryPage() {
             <tbody>
               {inventory.data.map((s) => (
                 <tr key={s.flower_type.id} onClick={() => setSelected(s.flower_type.id)}
-                  className={`cursor-pointer border-t border-stone-100 hover:bg-rose-50/50 ${selected === s.flower_type.id ? "bg-rose-50" : ""}`}>
+                  className={`cursor-pointer border-t border-stone-100 hover:bg-brand-50/50 ${selected === s.flower_type.id ? "bg-brand-50" : ""}`}>
                   <td className="py-2 font-medium">{s.flower_type.name}</td>
                   <td className="tabular-nums">{s.sellable}</td>
                   <td className={`tabular-nums ${s.expiring_soon ? "font-semibold text-amber-700" : "text-stone-400"}`}>{s.expiring_soon || "—"}</td>

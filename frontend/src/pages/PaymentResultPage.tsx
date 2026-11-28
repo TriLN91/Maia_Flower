@@ -7,10 +7,12 @@ import { ErrorBox, Loading } from "../components/ui";
 import { friendlyError } from "../lib/errors";
 import { timeRange } from "../lib/format";
 import { tokenForCode } from "../lib/orders";
+import { useTitle } from "../lib/title";
 
 /** Cổng thanh toán redirect về đây kèm tham số đã ký. Trang chỉ HIỂN THỊ: trạng thái thật do
  * IPN (server-to-server) cập nhật — backend đọc từ DB, không tin tham số trên URL. */
 export function PaymentResultPage() {
+  useTitle("Kết quả thanh toán");
   const [params] = useSearchParams();
   const query = params.toString();
   const result = useQuery({

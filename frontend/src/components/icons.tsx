@@ -104,3 +104,26 @@ export const TrashIcon = (p: P) => (
     <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
   </svg>
 );
+export const ChartIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+  </svg>
+);
+export const TagIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3 12V4h8l10 10-8 8L3 12Z" />
+    <circle cx="7.5" cy="8.5" r="1.5" />
+  </svg>
+);
+export const TrendIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m3 17 6-6 4 4 8-8" />
+    <path d="M15 7h6v6" />
+  </svg>
+);
+export const CogIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1" />
+  </svg>
+);

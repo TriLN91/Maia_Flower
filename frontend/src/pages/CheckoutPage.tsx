@@ -8,6 +8,7 @@ import { BagIcon, GiftIcon, ShieldIcon } from "../components/icons";
 import { BottomBar, Button, Empty, ErrorBox, Loading } from "../components/ui";
 import { cart, useCart } from "../lib/cart";
 import { friendlyError } from "../lib/errors";
+import { useTitle } from "../lib/title";
 import { dayLabel, money, vnDate } from "../lib/format";
 import { saveOrder } from "../lib/orders";
 
@@ -50,6 +51,7 @@ const inputCls =
   "min-h-12 w-full rounded-xl border-0 bg-cream/60 px-3.5 ring-1 ring-stone-200 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400";
 
 export function CheckoutPage() {
+  useTitle("Đặt hàng");
   const lines = useCart();
   const navigate = useNavigate();
   const shop = useQuery({ queryKey: ["shop-info"], queryFn: api.shopInfo, staleTime: 300_000 });

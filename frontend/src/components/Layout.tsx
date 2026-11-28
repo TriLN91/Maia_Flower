@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { toast, useToast } from "../lib/toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cartCount, useCart } from "../lib/cart";
 import { BagIcon, CheckIcon, LeafIcon, ReceiptIcon } from "./icons";
 import { ServerWakeBanner } from "./ServerWakeBanner";
@@ -62,6 +62,13 @@ function Toaster() {
 export function Layout() {
   const count = cartCount(useCart());
   const { pathname, hash } = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 8);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
   useEffect(() => {
     if (hash) {
       document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth" });
@@ -72,11 +79,19 @@ export function Layout() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <a
+        href="#noi-dung"
+        className="sr-only z-[2000] rounded-full bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      >
+        Bỏ qua tới nội dung
+      </a>
       <ServerWakeBanner />
       <div className="bg-brand-800 px-4 py-2 text-center text-xs font-medium tracking-wide text-brand-50">
         Hoa nhập mỗi sáng · Giao nhanh trong 2 giờ<span className="hidden sm:inline"> tại TP.HCM · Không cần tạo tài khoản</span>
       </div>
-      <header className="sticky top-0 z-[1001] border-b border-stone-200/70 bg-cream/90 backdrop-blur-md">
+      <header
+        className={`sticky top-0 z-[1001] border-b bg-cream/90 backdrop-blur-md transition-shadow ${scrolled ? "border-stone-200/70 shadow-[0_8px_24px_-16px_rgba(67,24,36,.25)]" : "border-transparent"}`}
+      >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
           <Logo />
           <nav className="hidden items-center gap-1 md:flex" aria-label="Chính">
@@ -120,7 +135,7 @@ export function Layout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
+      <main id="noi-dung" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
         <Outlet />
       </main>
 
@@ -158,6 +173,17 @@ export function Layout() {
             <p className="text-stone-400">
               Maia Flower là dự án demo. Thanh toán chạy qua cổng giả lập, không trừ tiền thật.
             </p>
+            <a
+              href="https://github.com/TriLN91/Maia_Flower"
+              target="_blank"
+              rel="noreferrer"
+              className="block hover:text-white"
+            >
+              Mã nguồn trên GitHub ↗
+            </a>
+            <Link to="/admin" className="block hover:text-white">
+              Trang quản trị (demo)
+            </Link>
           </div>
         </div>
         <div className="border-t border-white/10 py-5 text-center text-xs text-stone-500">

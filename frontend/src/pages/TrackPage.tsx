@@ -7,6 +7,7 @@ import { CheckIcon, ClockIcon, GiftIcon, PinIcon, UserIcon } from "../components
 import { OrderItems } from "../components/OrderItems";
 import { Button, ErrorBox, Loading } from "../components/ui";
 import { friendlyError } from "../lib/errors";
+import { useTitle } from "../lib/title";
 import { STATUS, dateTime, money, timeRange } from "../lib/format";
 
 const MESSAGE: Partial<Record<OrderStatus, string>> = {
@@ -70,6 +71,7 @@ export function TrackPage() {
     // Đơn chưa xong thì tự làm mới để thấy trạng thái thợ cập nhật
     refetchInterval: (q) => (q.state.data && FINAL.includes(q.state.data.status) ? false : 10_000),
   });
+  useTitle(order.data ? `Đơn ${order.data.code}` : "Theo dõi đơn");
   const pay = useMutation({
     mutationFn: () => api.startPayment(token),
     onSuccess: (p) => window.location.assign(p.payment_url),

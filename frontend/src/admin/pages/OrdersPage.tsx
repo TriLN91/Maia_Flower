@@ -35,7 +35,7 @@ export function OrdersPage() {
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
           {FILTERS.map((f) => (
             <button key={f.value} onClick={() => setStatus(f.value)}
-              className={`min-h-11 shrink-0 rounded-xl px-3 text-sm font-semibold ring-1 ${status === f.value ? "bg-rose-600 text-white ring-rose-600" : "bg-white ring-stone-200"}`}>
+              className={`min-h-11 shrink-0 rounded-xl px-3 text-sm font-semibold ring-1 ${status === f.value ? "bg-brand-600 text-white ring-brand-600" : "bg-white ring-stone-200"}`}>
               {f.label}
             </button>
           ))}
@@ -90,7 +90,7 @@ export function OrderDetailPage() {
 
   return (
     <div className="space-y-4">
-      <Link to="/admin/don-hang" className="text-sm font-semibold text-rose-700">← Đơn hàng</Link>
+      <Link to="/admin/don-hang" className="text-sm font-semibold text-brand-700">← Đơn hàng</Link>
       <PageTitle action={<span className={`rounded-full px-3 py-1 text-sm font-semibold ${STATUS[o.status].tone}`}>{STATUS[o.status].label}</span>}>
         <span className="font-mono">{o.code}</span>
       </PageTitle>
@@ -124,15 +124,15 @@ export function OrderDetailPage() {
               </li>
             ))}
           </ul>
-          {o.card_message && <p className="mt-3 rounded-lg bg-rose-50 p-2 text-sm italic">Thiệp: “{o.card_message}”</p>}
+          {o.card_message && <p className="mt-3 rounded-lg bg-brand-50 p-2 text-sm italic">Thiệp: “{o.card_message}”</p>}
           {o.note && <p className="mt-2 text-sm">Ghi chú: {o.note}</p>}
         </Card>
         <Card title="Giao hàng">
           <dl className="space-y-1 text-sm">
             <div><dt className="inline text-stone-500">Thời gian: </dt><dd className="inline font-semibold">{timeRange(o.delivery_starts_at, o.delivery_ends_at)}</dd></div>
             <div><dt className="inline text-stone-500">Địa chỉ: </dt><dd className="inline">{o.delivery_address}</dd></div>
-            <div><dt className="inline text-stone-500">Người đặt: </dt><dd className="inline">{o.customer_name} · <a className="text-rose-700" href={`tel:${o.customer_phone}`}>{o.customer_phone}</a></dd></div>
-            {o.recipient_name && <div><dt className="inline text-stone-500">Người nhận: </dt><dd className="inline">{o.recipient_name}{o.recipient_phone && <> · <a className="text-rose-700" href={`tel:${o.recipient_phone}`}>{o.recipient_phone}</a></>}</dd></div>}
+            <div><dt className="inline text-stone-500">Người đặt: </dt><dd className="inline">{o.customer_name} · <a className="text-brand-700" href={`tel:${o.customer_phone}`}>{o.customer_phone}</a></dd></div>
+            {o.recipient_name && <div><dt className="inline text-stone-500">Người nhận: </dt><dd className="inline">{o.recipient_name}{o.recipient_phone && <> · <a className="text-brand-700" href={`tel:${o.recipient_phone}`}>{o.recipient_phone}</a></>}</dd></div>}
             <div><dt className="inline text-stone-500">Tổng: </dt><dd className="inline font-semibold">{money(o.total)}</dd> <span className="text-stone-500">(ship {money(o.delivery_fee)})</span></div>
           </dl>
         </Card>

@@ -5,8 +5,10 @@ import { ArrowRightIcon, ReceiptIcon } from "../components/icons";
 import { Empty } from "../components/ui";
 import { STATUS, money, timeRange } from "../lib/format";
 import { savedOrders } from "../lib/orders";
+import { useTitle } from "../lib/title";
 
 export function MyOrdersPage() {
+  useTitle("Đơn của tôi");
   const saved = savedOrders();
   const results = useQueries({
     queries: saved.map((o) => ({

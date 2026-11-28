@@ -3,6 +3,7 @@ import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Link, Route, Routes } from "react-router";
 import { ApiError } from "./api/client";
+import { LeafIcon } from "./components/icons";
 import { Layout } from "./components/Layout";
 import { Empty, Loading } from "./components/ui";
 import "./index.css";
@@ -32,9 +33,13 @@ const queryClient = new QueryClient({
 
 function NotFound() {
   return (
-    <Empty icon="🥀" title="Không tìm thấy trang">
-      <Link to="/" className="font-semibold text-brand-700">
-        Về trang chủ
+    <Empty icon={<LeafIcon className="size-9" />} title="Không tìm thấy trang">
+      <p>Đường dẫn này không tồn tại hoặc đã thay đổi.</p>
+      <Link
+        to="/"
+        className="mt-5 inline-flex min-h-12 items-center rounded-full bg-brand-700 px-6 font-semibold text-white hover:bg-brand-800"
+      >
+        Về cửa hàng
       </Link>
     </Empty>
   );

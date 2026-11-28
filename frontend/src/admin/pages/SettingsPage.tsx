@@ -34,7 +34,7 @@ function PricingCard() {
   return (
     <Card title="Giảm giá động">
       <label className="mb-3 flex min-h-11 items-center gap-3 rounded-xl bg-stone-50 px-3">
-        <input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} className="size-5 accent-rose-600" />
+        <input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} className="size-5 accent-brand-600" />
         <span><b>Bật giảm giá tự động</b><span className="block text-xs text-stone-500">Tắt = mọi mẫu về giá gốc ngay khi lưu</span></span>
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -68,7 +68,7 @@ function SlotRow({ s, date }: { s: SlotDay; date: string }) {
       <td><input type="number" min={s.reserved_count} value={cap} onChange={(e) => setCap(+e.target.value)} className={`${inputCls} w-20`} aria-label="Sức chứa" /></td>
       <td>
         <label className="flex min-h-11 items-center gap-2 text-sm">
-          <input type="checkbox" checked={s.is_closed} onChange={(e) => save.mutate({ is_closed: e.target.checked })} className="size-5 accent-rose-600" />Nghỉ
+          <input type="checkbox" checked={s.is_closed} onChange={(e) => save.mutate({ is_closed: e.target.checked })} className="size-5 accent-brand-600" />Nghỉ
         </label>
       </td>
       <td className="text-right">
