@@ -14,9 +14,9 @@ const normalizePhone = (s: string) => s.replace(/[\s.\-()]/g, "");
 
 function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-stone-100">
-      <h2 className="flex items-center gap-2 font-bold">
-        <span className="flex size-6 items-center justify-center rounded-full bg-rose-600 text-xs text-white">
+    <section className="space-y-4 rounded-3xl bg-white p-5 ring-1 ring-stone-200/70">
+      <h2 className="flex items-center gap-3 font-display text-xl font-semibold text-ink">
+        <span className="flex size-8 items-center justify-center rounded-full bg-brand-50 font-sans text-sm font-bold text-brand-700">
           {n}
         </span>
         {title}
@@ -45,7 +45,7 @@ function Field({
 }
 
 const inputCls =
-  "min-h-11 w-full rounded-xl border-0 px-3 ring-1 ring-stone-200 focus:ring-2 focus:ring-rose-400";
+  "min-h-12 w-full rounded-xl border-0 bg-cream/60 px-3.5 ring-1 ring-stone-200 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400";
 
 export function CheckoutPage() {
   const lines = useCart();
@@ -157,7 +157,7 @@ export function CheckoutPage() {
   if (lines.length === 0 && !placeOrder.isPending)
     return (
       <Empty icon="🧺" title="Giỏ hàng đang trống">
-        <Link to="/" className="font-semibold text-rose-700">
+        <Link to="/" className="font-semibold text-brand-700">
           Chọn một bó hoa →
         </Link>
       </Empty>
@@ -170,14 +170,25 @@ export function CheckoutPage() {
 
   return (
     <form
-      className="space-y-4"
+      className="mx-auto max-w-2xl space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
         setTouched(true);
         if (valid) placeOrder.mutate();
       }}
     >
-      <h1 className="text-xl font-extrabold">Đặt hàng</h1>
+      <div className="space-y-3 pb-2">
+        <ol className="flex items-center gap-2 text-xs font-medium text-stone-400" aria-label="Tiến trình">
+          <li>
+            <Link to="/gio-hang" className="hover:text-brand-700">Giỏ hàng</Link>
+          </li>
+          <li aria-hidden>—</li>
+          <li className="text-brand-700" aria-current="step">Thông tin giao hàng</li>
+          <li aria-hidden>—</li>
+          <li>Thanh toán</li>
+        </ol>
+        <h1 className="font-display text-3xl font-semibold text-ink sm:text-4xl">Đặt hàng</h1>
+      </div>
 
       <Step n={1} title="Giao tới đâu?">
         <AddressMap
@@ -190,7 +201,7 @@ export function CheckoutPage() {
         {delivery.isFetching && <p className="text-sm text-stone-500">Đang tính phí ship…</p>}
         {delivery.error && <ErrorBox message={friendlyError(delivery.error)} />}
         {delivery.data && !delivery.isFetching && (
-          <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-900">
+          <p className="rounded-xl bg-sage-50 px-3.5 py-2.5 text-sm text-sage-800">
             Cách shop ~{delivery.data.distance_km} km
             {delivery.data.provider === "haversine" && " (ước tính)"} · Phí ship{" "}
             <b>{delivery.data.free_shipping ? "Miễn phí 🎉" : money(delivery.data.fee)}</b>
@@ -209,7 +220,7 @@ export function CheckoutPage() {
       </Step>
 
       <Step n={2} title="Giao lúc nào?">
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="radiogroup" aria-label="Ngày giao">
+        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1" role="radiogroup" aria-label="Ngày giao">
           {days.map((d) => (
             <button
               type="button"
@@ -217,7 +228,7 @@ export function CheckoutPage() {
               role="radio"
               aria-checked={date === d.iso}
               onClick={() => setDate(d.iso)}
-              className={`min-h-11 shrink-0 rounded-xl px-4 text-sm font-semibold ring-1 ${date === d.iso ? "bg-rose-600 text-white ring-rose-600" : "bg-white text-stone-700 ring-stone-200"}`}
+              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-semibold ring-1 transition ${date === d.iso ? "bg-ink text-white ring-ink" : "bg-white text-stone-700 ring-stone-200 hover:ring-stone-300"}`}
             >
               {d.label}
             </button>
@@ -234,7 +245,7 @@ export function CheckoutPage() {
                 aria-checked={slotId === s.slot_id}
                 disabled={!s.bookable}
                 onClick={() => setSlotId(s.slot_id)}
-                className={`min-h-14 rounded-xl px-3 py-2 text-left ring-1 disabled:opacity-40 ${slotId === s.slot_id ? "bg-rose-600 text-white ring-rose-600" : "bg-white ring-stone-200"}`}
+                className={`min-h-14 rounded-2xl px-3.5 py-2 text-left ring-1 transition disabled:opacity-40 ${slotId === s.slot_id ? "bg-brand-700 text-white ring-brand-700" : "bg-white ring-stone-200 hover:ring-brand-300"}`}
               >
                 <span className="block font-semibold">
                   {s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}
@@ -270,11 +281,11 @@ export function CheckoutPage() {
           />
         </Field>
         <label className="flex min-h-11 items-center gap-3">
-          <input type="checkbox" checked={gift} onChange={(e) => setGift(e.target.checked)} className="size-5 accent-rose-600" />
+          <input type="checkbox" checked={gift} onChange={(e) => setGift(e.target.checked)} className="size-5 accent-brand-700" />
           <span>Tặng người khác</span>
         </label>
         {gift && (
-          <div className="space-y-3 rounded-xl bg-rose-50/60 p-3">
+          <div className="space-y-3 rounded-2xl bg-brand-50/60 p-4">
             <Field label="Tên người nhận">
               <input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} className={inputCls} />
             </Field>
@@ -297,7 +308,8 @@ export function CheckoutPage() {
       </Step>
 
       {t && (
-        <dl className="space-y-1 rounded-2xl bg-white p-4 text-sm ring-1 ring-stone-100">
+        <dl className="space-y-2 rounded-3xl bg-white p-5 text-sm ring-1 ring-stone-200/70">
+          <dt className="pb-1 font-display text-xl font-semibold text-ink">Đơn hàng của bạn</dt>
           {t.lines.map((l) => (
             <div key={l.template_id} className="flex justify-between">
               <dt>
@@ -307,7 +319,7 @@ export function CheckoutPage() {
             </div>
           ))}
           {t.discount_total > 0 && (
-            <div className="flex justify-between text-rose-700">
+            <div className="flex justify-between text-brand-700">
               <dt>Đã gồm ưu đãi hoa tươi</dt>
               <dd className="tabular-nums">−{money(t.discount_total)}</dd>
             </div>
@@ -329,7 +341,7 @@ export function CheckoutPage() {
       <BottomBar>
         <div className="flex-1">
           <p className="text-xs text-stone-500">Tổng thanh toán</p>
-          <p className="text-lg font-extrabold tabular-nums">
+          <p className="text-lg font-bold tabular-nums">
             {t && t.delivery_fee != null ? money(t.total) : "—"}
           </p>
         </div>

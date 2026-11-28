@@ -122,7 +122,7 @@ export function AddressMap({
         <button
           type="button"
           onClick={useMyLocation}
-          className="min-h-11 rounded-xl px-3 font-semibold text-rose-700 hover:bg-rose-50"
+          className="min-h-11 rounded-xl px-3 font-semibold text-brand-700 hover:bg-brand-50"
         >
           {locating ? "Đang định vị…" : "📡 Dùng vị trí của tôi"}
         </button>
@@ -158,7 +158,7 @@ function AddressSearch({ onPick }: { onPick: (p: LatLng, address: string) => voi
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Tìm địa chỉ (vd. 12 Nguyễn Huệ)"
-        className="min-h-11 w-full rounded-xl border-0 px-3 ring-1 ring-stone-200 focus:ring-2 focus:ring-rose-400"
+        className="min-h-12 w-full rounded-xl border-0 bg-cream/60 px-3.5 ring-1 ring-stone-200 focus:ring-2 focus:ring-brand-400"
         aria-label="Tìm địa chỉ"
       />
       {list.length > 0 && (
@@ -167,7 +167,7 @@ function AddressSearch({ onPick }: { onPick: (p: LatLng, address: string) => voi
             <li key={s.place_id}>
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left hover:bg-rose-50"
+                className="block w-full px-3 py-2 text-left hover:bg-brand-50"
                 onClick={async () => {
                   const p = await api.place(s.place_id);
                   setItems([]);

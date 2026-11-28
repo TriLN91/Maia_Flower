@@ -33,7 +33,7 @@ const queryClient = new QueryClient({
 function NotFound() {
   return (
     <Empty icon="🥀" title="Không tìm thấy trang">
-      <Link to="/" className="font-semibold text-rose-700">
+      <Link to="/" className="font-semibold text-brand-700">
         Về trang chủ
       </Link>
     </Empty>

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { api } from "../api/client";
+import { CheckIcon, ClockIcon } from "../components/icons";
 import { ErrorBox, Loading } from "../components/ui";
 import { friendlyError } from "../lib/errors";
 import { tokenForCode } from "../lib/orders";
@@ -28,25 +29,34 @@ export function PaymentResultPage() {
   const token = tokenForCode(r.order_code);
 
   return (
-    <div className="space-y-5 py-8 text-center">
-      <div className="text-6xl">{ok ? "💐" : r.gateway_success ? "⏳" : "😕"}</div>
-      <h1 className="text-xl font-extrabold">
-        {ok ? "Thanh toán thành công!" : r.gateway_success ? "Đang xác nhận…" : "Chưa thanh toán được"}
+    <div className="mx-auto max-w-md space-y-5 py-10 text-center">
+      <div
+        className={`mx-auto flex size-20 items-center justify-center rounded-full ${ok ? "bg-sage-50 text-sage-700" : r.gateway_success ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-600"}`}
+      >
+        {ok ? <CheckIcon className="size-10" /> : r.gateway_success ? <ClockIcon className="size-10" /> : <span className="text-3xl font-bold">!</span>}
+      </div>
+      <h1 className="font-display text-3xl font-semibold text-ink">
+        {ok ? "Cảm ơn bạn đã đặt hoa!" : r.gateway_success ? "Đang xác nhận…" : "Chưa thanh toán được"}
       </h1>
       <p className="text-stone-600">{r.message}</p>
-      <p className="font-mono text-sm text-stone-500">Mã đơn: {r.order_code}</p>
-      {token ? (
-        <Link
-          to={`/don/${token}`}
-          className="inline-flex min-h-11 items-center rounded-xl bg-rose-600 px-5 font-semibold text-white"
-        >
-          {ok ? "Theo dõi đơn hàng" : "Xem đơn / thử thanh toán lại"}
-        </Link>
-      ) : (
-        <Link to="/" className="font-semibold text-rose-700">
-          Về trang chủ
-        </Link>
-      )}
+      {ok && <p className="text-sm text-stone-500">Thợ Maia sẽ bắt đầu bó hoa cho bạn ngay.</p>}
+      <p className="inline-block rounded-full bg-white px-4 py-1.5 text-sm text-stone-600 ring-1 ring-stone-200">
+        Mã đơn <b className="text-ink">{r.order_code}</b>
+      </p>
+      <div>
+        {token ? (
+          <Link
+            to={`/don/${token}`}
+            className="inline-flex min-h-12 items-center rounded-full bg-brand-700 px-6 font-semibold text-white hover:bg-brand-800"
+          >
+            {ok ? "Theo dõi đơn hàng" : "Xem đơn / thử thanh toán lại"}
+          </Link>
+        ) : (
+          <Link to="/" className="font-semibold text-brand-700">
+            Về trang chủ
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

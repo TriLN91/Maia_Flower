@@ -1,13 +1,55 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+/* Bộ nhận diện Maia: nền kem ấm, màu chủ đạo đỏ rượu vang (sang, không chói như hồng neon),
+   xanh lá xô thơm làm màu phụ — gợi cảm giác tiệm hoa thủ công hơn là sàn thương mại điện tử. */
 @theme {
   --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     sans-serif;
+  --font-display: "Playfair Display", ui-serif, Georgia, "Times New Roman", serif;
+
+  --color-cream: #fbf7f1;
+  --color-paper: #f4ece1;
+  --color-ink: #2b2326;
+
+  --color-brand-50: #fbf3f4;
+  --color-brand-100: #f6e4e7;
+  --color-brand-200: #ebc5cc;
+  --color-brand-300: #dc9aa7;
+  --color-brand-400: #c86e80;
+  --color-brand-500: #b04a60;
+  --color-brand-600: #94354b;
+  --color-brand-700: #7a2b3e;
+  --color-brand-800: #5f2231;
+  --color-brand-900: #431824;
+
+  --color-sage-50: #f3f6f1;
+  --color-sage-100: #e3eadf;
+  --color-sage-200: #c9d6c2;
+  --color-sage-500: #7d9473;
+  --color-sage-700: #4e6446;
+  --color-sage-800: #3c4d36;
+
+  --animate-fade-up: fade-up 0.5s ease-out both;
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 html {
   -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
 }
 
 /* Chừa chỗ cho thanh hành động cố định ở đáy + vùng an toàn của iPhone */
@@ -15,6 +57,22 @@ html {
   padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .leaflet-container {
   font-family: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
