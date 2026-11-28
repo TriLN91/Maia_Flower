@@ -2,10 +2,11 @@ import asyncio
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 
 from app.core.db import SessionLocal
 from app.models import Batch, BatchStatus, Order, OrderStatus
+from app.models.staff_user import StaffUser
 from app.seed.demo import SeedError, seed_demo
 from app.services.inventory import ledger_audit, mark_expired_batches, utcnow
 
@@ -181,6 +182,18 @@ async def test_cli_seed_demo_if_empty_and_demo_accounts():
 
     code, out = await _cli("seed-demo", "--if-empty")
     assert code == 0 and "already present" in out
+
+    # Lần deploy đầu quên đặt mật khẩu -> đặt sau rồi khởi động lại vẫn phải tạo được tài khoản
+    async with SessionLocal() as s:
+        await s.execute(delete(StaffUser))
+        await s.commit()
+    code, out = await _cli(
+        "seed-demo", "--if-empty", "--demo-accounts", DEMO_ACCOUNT_PASSWORD="demo-pass-for-tests"
+    )
+    assert code == 0, out
+    assert "already present" in out and "demo accounts created" in out
+    async with SessionLocal() as s:
+        assert await s.scalar(select(func.count()).select_from(StaffUser)) == 2
 
 
 async def test_cli_refuses_seed_in_production_without_demo_mode():

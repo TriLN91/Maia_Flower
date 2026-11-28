@@ -112,6 +112,12 @@ async def _seed_demo(
     async with SessionLocal() as session:
         if if_empty and await session.scalar(select(FlowerType.id).limit(1)) is not None:
             print("Demo data already present — skipping seed")
+            # Vẫn tạo tài khoản demo nếu còn thiếu (vd. lần đầu quên đặt DEMO_ACCOUNT_PASSWORD)
+            if demo_accounts and get_settings().demo_account_password:
+                accounts = await _ensure_demo_accounts(session)
+                await session.commit()
+                if accounts:
+                    print("  demo accounts created: " + ", ".join(accounts))
             await engine.dispose()
             return
         try:
